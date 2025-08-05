@@ -1,0 +1,114 @@
+.App {
+  min-height: 100vh;
+}
+
+/* Efectos hover para las tarjetas de cómics */
+.comic-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.comic-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.comic-card img {
+  transition: filter 0.3s ease;
+}
+
+.comic-card:hover img {
+  filter: brightness(1.1);
+}
+
+/* Navbar personalizada */
+.navbar-brand {
+  font-family: 'Arial Black', sans-serif;
+  letter-spacing: -1px;
+}
+
+/* Hero section */
+.hero-banner {
+  position: relative;
+}
+
+.hero-content {
+  z-index: 2;
+}
+
+/* Botones hero */
+.hero-buttons .btn {
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.hero-buttons .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-banner {
+    padding-left: 2rem !important;
+    height: 50vh !important;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem !important;
+  }
+  
+  .hero-buttons .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comic-card {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Badge personalizado */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Input de búsqueda */
+.form-control:focus {
+  border-color: #e50914;
+  box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
+}

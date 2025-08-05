@@ -1,0 +1,112 @@
+/* Reset y estilos globales */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #141414;
+  color: #ffffff;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Variables CSS para colores Netflix */
+:root {
+  --netflix-red: #e50914;
+  --netflix-black: #141414;
+  --netflix-dark-gray: #222222;
+  --netflix-gray: #333333;
+  --netflix-light-gray: #555555;
+  --netflix-white: #ffffff;
+}
+
+/* Estilos para elementos de Bootstrap personalizados */
+.bg-netflix-black {
+  background-color: var(--netflix-black) !important;
+}
+
+.bg-netflix-red {
+  background-color: var(--netflix-red) !important;
+}
+
+.text-netflix-red {
+  color: var(--netflix-red) !important;
+}
+
+/* Mejoras para cards */
+.card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-img-top {
+  border-radius: 8px 8px 0 0;
+}
+
+/* Botones personalizados */
+.btn-netflix {
+  background-color: var(--netflix-red);
+  border-color: var(--netflix-red);
+  color: white;
+  font-weight: 600;
+}
+
+.btn-netflix:hover {
+  background-color: #b8070f;
+  border-color: #b8070f;
+  color: white;
+}
+
+/* Navbar personalizada */
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+  color: var(--netflix-red);
+}
+
+.navbar-dark .navbar-nav .nav-link.active {
+  color: var(--netflix-red);
+  font-weight: 600;
+}
+
+/* Estilos para el footer */
+footer {
+  border-top: 1px solid var(--netflix-gray);
+}
+
+/* Utilidades adicionales */
+.text-shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(135deg, #141414 0%, #222222 100%);
+}
+
+/* Animaciones suaves */
+.smooth-transition {
+  transition: all 0.3s ease;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 576px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
+}

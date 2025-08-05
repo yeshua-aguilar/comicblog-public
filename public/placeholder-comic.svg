@@ -1,0 +1,10 @@
+<svg width="400" height="600" viewBox="0 0 400 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="600" fill="#333333"/>
+  <rect x="50" y="50" width="300" height="400" fill="#e50914" rx="8"/>
+  <circle cx="200" cy="250" r="50" fill="#ffffff" opacity="0.8"/>
+  <path d="M180 230L180 270L220 250L180 230Z" fill="#333333"/>
+  <rect x="50" y="470" width="300" height="20" fill="#ffffff" opacity="0.9" rx="4"/>
+  <rect x="50" y="500" width="200" height="15" fill="#b3b3b3" opacity="0.7" rx="4"/>
+  <rect x="50" y="525" width="150" height="15" fill="#b3b3b3" opacity="0.5" rx="4"/>
+  <text x="200" y="580" text-anchor="middle" fill="#b3b3b3" font-family="Arial, sans-serif" font-size="14">Comic Placeholder</text>
+</svg>
