@@ -82,14 +82,13 @@ function App() {
         </div>
       </div>
 
-      {/* Secciones de Cómics tipo Netflix */}
+      {/* Lista de Cómics */}
       <div className="container-fluid px-4 py-4">
-        {/* Tendencias */}
         <div className="row mb-5">
           <div className="col-12">
-            <h3 className="mb-3">Tendencias Ahora</h3>
+            <h3 className="mb-3">Todos los Cómics</h3>
             <div className="row">
-              {[1,2,3,4,5,6].map(num => (
+              {[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24].map(num => (
                 <div key={num} className="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
                   <div className="card bg-dark border-0 h-100 comic-card">
                     <img 
@@ -101,81 +100,6 @@ function App() {
                     <div className="card-body p-2">
                       <h6 className="card-title text-white mb-1">Comic Title {num}</h6>
                       <small className="text-muted">Autor {num}</small>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Populares */}
-        <div className="row mb-5">
-          <div className="col-12">
-            <h3 className="mb-3">Populares en ComicFlix</h3>
-            <div className="row">
-              {[1,2,3,4,5,6].map(num => (
-                <div key={num} className="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                  <div className="card bg-dark border-0 h-100 comic-card">
-                    <img 
-                      src="/placeholder-comic.svg" 
-                      className="card-img-top" 
-                      alt={`Popular ${num}`}
-                      style={{height: '300px', objectFit: 'cover'}}
-                    />
-                    <div className="card-body p-2">
-                      <h6 className="card-title text-white mb-1">Popular Comic {num}</h6>
-                      <small className="text-muted">Autor Popular {num}</small>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Acción */}
-        <div className="row mb-5">
-          <div className="col-12">
-            <h3 className="mb-3">Acción y Aventura</h3>
-            <div className="row">
-              {[1,2,3,4,5,6].map(num => (
-                <div key={num} className="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                  <div className="card bg-dark border-0 h-100 comic-card">
-                    <img 
-                      src="/placeholder-comic.svg" 
-                      className="card-img-top" 
-                      alt={`Acción ${num}`}
-                      style={{height: '300px', objectFit: 'cover'}}
-                    />
-                    <div className="card-body p-2">
-                      <h6 className="card-title text-white mb-1">Acción Comic {num}</h6>
-                      <small className="text-muted">Autor Acción {num}</small>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Romance */}
-        <div className="row mb-5">
-          <div className="col-12">
-            <h3 className="mb-3">Romance</h3>
-            <div className="row">
-              {[1,2,3,4,5,6].map(num => (
-                <div key={num} className="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                  <div className="card bg-dark border-0 h-100 comic-card">
-                    <img 
-                      src="/placeholder-comic.svg" 
-                      className="card-img-top" 
-                      alt={`Romance ${num}`}
-                      style={{height: '300px', objectFit: 'cover'}}
-                    />
-                    <div className="card-body p-2">
-                      <h6 className="card-title text-white mb-1">Romance Comic {num}</h6>
-                      <small className="text-muted">Autor Romance {num}</small>
                     </div>
                   </div>
                 </div>
