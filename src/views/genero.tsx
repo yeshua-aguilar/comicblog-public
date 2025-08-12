@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllPosts } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
-import './css/genero.css';
+import '../assets/css/genero.css';
 
 function Genero() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -169,7 +169,7 @@ function Genero() {
       {/* Footer */}
       <footer className="bg-black text-center py-4 mt-5">
         <div className="container">
-          <p className="text-muted mb-0">© 2024 ComicFlix. Todos los derechos reservados.</p>
+          <p className="text-white mb-0">© 2025 ComicFlix. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

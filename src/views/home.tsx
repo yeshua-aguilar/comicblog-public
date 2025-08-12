@@ -222,8 +222,8 @@ function Home() {
         {/* Footer */}
         <footer className="bg-black text-center py-4 mt-5">
           <div className="container">
-            <p className="text-muted mb-0">
-              © 2024 ComicFlix. Todos los derechos reservados.
+            <p className="text-white mb-0">
+              © 2025 ComicFlix. Todos los derechos reservados.
             </p>
           </div>
         </footer>
@@ -269,8 +269,8 @@ function Home() {
         {/* Footer */}
         <footer className="bg-black text-center py-4 mt-5">
           <div className="container">
-            <p className="text-muted mb-0">
-              © 2024 ComicFlix. Todos los derechos reservados.
+            <p className="text-white mb-0">
+              © 2025 ComicFlix. Todos los derechos reservados.
             </p>
           </div>
         </footer>
@@ -518,8 +518,8 @@ function Home() {
       {/* Footer */}
       <footer className="bg-black text-center py-4 mt-5">
         <div className="container">
-          <p className="text-muted mb-0">
-            © 2024 ComicFlix. Todos los derechos reservados.
+          <p className="text-white mb-0">
+            © 2025 ComicFlix. Todos los derechos reservados.
           </p>
         </div>
       </footer>
