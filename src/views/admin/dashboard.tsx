@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllPosts } from '../../services/blogService';
+import { getAllPosts, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
 import type { BlogPost } from '../../types/blog';
 import '../../assets/css/dashboard.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -21,7 +21,8 @@ const Dashboard: React.FC = () => {
     image: '',
     content: '',
     tags: '',
-    excerpt: ''
+    excerpt: '',
+    slug: ''
   });
 
   useEffect(() => {
@@ -49,11 +50,40 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí implementarías la lógica para guardar el blog
-    console.log('Blog data:', formData);
-    alert('Funcionalidad de guardado pendiente de implementar');
+    
+    const postData = {
+      title: formData.title,
+      author: formData.author,
+      date: new Date().toISOString().split('T')[0],
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+      excerpt: formData.excerpt,
+      image: formData.image,
+      content: formData.content
+    };
+
+    try {
+      if (editingBlog) {
+        await updatePost(editingBlog.slug, postData);
+        alert('Blog actualizado exitosamente');
+      } else {
+        if (formData.slug.trim()) {
+          const ok = await createPostWithSlug(formData.slug.trim(), postData);
+          if (!ok) throw new Error('No se pudo crear con slug personalizado');
+        } else {
+          await createPost(postData);
+        }
+        alert('Blog creado exitosamente');
+      }
+      
+      resetForm();
+      loadBlogs();
+      setActiveSection('list');
+    } catch (error) {
+      console.error('Error saving blog:', error);
+      alert('Error al guardar el blog');
+    }
   };
 
   const handleEditBlog = (blog: BlogPost) => {
@@ -64,9 +94,23 @@ const Dashboard: React.FC = () => {
       image: blog.image || '',
       content: blog.content,
       tags: blog.tags.join(', '),
-      excerpt: blog.excerpt
+      excerpt: blog.excerpt,
+      slug: blog.slug
     });
     setActiveSection('create');
+  };
+
+  const handleDeleteBlog = async (slug: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este blog?')) {
+      try {
+        await deletePost(slug);
+        alert('Blog eliminado exitosamente');
+        loadBlogs();
+      } catch (error) {
+        console.error('Error deleting blog:', error);
+        alert('Error al eliminar el blog');
+      }
+    }
   };
 
   const resetForm = () => {
@@ -76,7 +120,8 @@ const Dashboard: React.FC = () => {
       image: '',
       content: '',
       tags: '',
-      excerpt: ''
+      excerpt: '',
+      slug: ''
     });
     setEditingBlog(null);
   };
@@ -179,6 +224,22 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
+
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label htmlFor="slug" className="form-label">Slug (opcional al crear)</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({...formData, slug: e.target.value})}
+                  placeholder="mi-slug-personalizado"
+                  disabled={!!editingBlog}
+                />
+                <small className="text-muted">Si lo dejas vacío, se generará un ID automático.</small>
+              </div>
+            </div>
             
             <div className="mb-3">
               <label htmlFor="image" className="form-label">URL de la Portada</label>
@@ -275,12 +336,20 @@ const Dashboard: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div className="col-lg-1 col-md-12 col-12 d-flex justify-content-end mt-2 mt-lg-0">
+                <div className="col-lg-1 col-md-12 col-12 d-flex justify-content-end gap-2 mt-2 mt-lg-0">
                    <button
-                      className="btn btn-sm btn-outline-primary px-3 d-flex align-items-center gap-2"
+                      className="btn btn-sm btn-outline-primary"
                       onClick={() => handleEditBlog(blog)}
+                      title="Editar blog"
                     >
-                      <span className="fw-bold">EDITAR</span>
+                      ✏️
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleDeleteBlog(blog.slug)}
+                      title="Eliminar blog"
+                    >
+                      🗑️
                     </button>
                  </div>
               </div>

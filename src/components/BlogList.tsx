@@ -107,15 +107,17 @@ const BlogList: FC<BlogListProps> = ({ posts, onPostClick }) => {
                     
                     {/* Categorías/Tags */}
                     <div className="mb-1">
-                      {post.tags.slice(0, 2).map((tag, index) => (
-                        <span 
-                          key={index} 
-                          className="badge bg-danger me-1 mb-1"
-                          style={{ fontSize: '0.62rem', padding: '2px 6px' }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {Array.isArray(post.tags)
+                        ? post.tags.map((tag, index) => (
+                            <span 
+                              key={index} 
+                              className="badge bg-danger me-1 mb-1"
+                              style={{ fontSize: '0.62rem', padding: '2px 6px' }}
+                            >
+                              {tag}
+                            </span>
+                          ))
+                        : null}
                     </div>
                   </div>
                 </div>

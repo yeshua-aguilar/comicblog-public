@@ -348,9 +348,11 @@ function Home() {
         <div 
           className="hero-banner d-flex align-items-center justify-content-start"
           style={{
-            backgroundImage: posts.length > 0 && posts[0].image 
-              ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${posts[0].image})`
-              : 'linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(/placeholder-hero.svg)',
+            backgroundImage: loading 
+              ? 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9))' 
+              : (posts.length > 0 && posts[0].image 
+                  ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(${posts[0].image})`
+                  : 'linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url(/placeholder-hero.svg)'),
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             height: '70vh',
@@ -358,7 +360,13 @@ function Home() {
           }}
         >
           <div className="hero-content" style={{maxWidth: '500px'}}>
-            {posts.length > 0 ? (
+            {loading ? (
+              <div className="d-flex justify-content-center align-items-center w-100 h-100">
+                <div className="spinner-border text-light" role="status" style={{width: '3rem', height: '3rem'}}>
+                  <span className="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+            ) : posts.length > 0 ? (
               <>
                 <h1 className="display-4 fw-bold mb-3 text-shadow">{posts[0].title}</h1>
                 <div className="mb-3">
@@ -366,9 +374,11 @@ function Home() {
                     <i className="fas fa-star me-1"></i>Destacado
                   </span>
                   <span className="text-white me-2">{new Date(posts[0].date).getFullYear()}</span>
-                  {posts[0].tags.slice(0, 2).map((tag, index) => (
-                    <span key={index} className="badge bg-danger me-2 px-2 py-1">{tag}</span>
-                  ))}
+                  {Array.isArray(posts[0].tags)
+                    ? posts[0].tags.map((tag, index) => (
+                        <span key={index} className="badge bg-danger me-2 px-2 py-1">{tag}</span>
+                      ))
+                    : null}
                 </div>
                 <p className="lead mb-4 text-shadow">
                   {posts[0].excerpt}
@@ -390,44 +400,10 @@ function Home() {
               </>
             ) : (
               <>
-                <h1 className="display-4 fw-bold mb-3 text-shadow">El Mundo de One Piece: Una Aventura Épica</h1>
-                <div className="mb-3">
-                  <span className="badge bg-success me-2 px-3 py-2">Destacado</span>
-                  <span className="badge bg-warning text-dark me-2">One Piece</span>
-                  <span className="badge bg-info me-2">Manga</span>
-                </div>
+                <h1 className="display-4 fw-bold mb-3 text-shadow">No hay publicaciones destacadas</h1>
                 <p className="lead mb-4 text-shadow">
-                  Descubre por qué One Piece se ha convertido en uno de los mangas más populares de todos los tiempos.
+                  Vuelve más tarde para ver nuevo contenido.
                 </p>
-                <div className="hero-buttons d-flex flex-wrap gap-3">
-                  <button 
-                    className="btn btn-light btn-lg d-flex align-items-center px-4 py-3 shadow-lg"
-                    onClick={handleBlogClick}
-                    style={{ 
-                      fontWeight: '600',
-                      borderRadius: '8px',
-                      transition: 'all 0.3s ease',
-                      border: 'none'
-                    }}
-                  >
-                    <span className="me-2" style={{ fontSize: '1.2rem' }}>📖</span>
-                    Leer Ahora
-                  </button>
-                  <button 
-                    className="btn btn-outline-light btn-lg d-flex align-items-center px-4 py-3 shadow"
-                    onClick={handleBlogClick}
-                    style={{ 
-                      fontWeight: '600',
-                      borderRadius: '8px',
-                      transition: 'all 0.3s ease',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                  >
-                    <span className="me-2" style={{ fontSize: '1.2rem' }}>ℹ️</span>
-                    Más Información
-                  </button>
-                </div>
               </>
             )}
           </div>
@@ -495,15 +471,17 @@ function Home() {
                         
                         {/* Categorías/Tags */}
                         <div className="mb-1">
-                          {post.tags.slice(0, 2).map((tag, index) => (
-                            <span 
-                              key={index} 
-                              className="badge bg-danger me-1 mb-1"
-                              style={{ fontSize: '0.62rem', padding: '2px 6px' }}
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                          {Array.isArray(post.tags)
+                            ? post.tags.map((tag, index) => (
+                                <span 
+                                  key={index} 
+                                  className="badge bg-danger me-1 mb-1"
+                                  style={{ fontSize: '0.62rem', padding: '2px 6px' }}
+                                >
+                                  {tag}
+                                </span>
+                              ))
+                            : null}
                         </div>
                       </div>
                     </div>

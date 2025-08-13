@@ -1,69 +1,66 @@
-# React + TypeScript + Vite
+# ComicFlix: Tu Plataforma de Cómics Favorita
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida con React, TypeScript y Vite, que ofrece una experiencia de usuario inspirada en Netflix. Utiliza Firebase para los servicios de backend, incluyendo Firestore como base de datos en tiempo real.
 
-Currently, two official plugins are available:
+## Características Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Interfaz Inspirada en Netflix**: Un diseño atractivo y familiar que facilita la navegación.
+- **Exploración de Cómics**: Visualiza y lee publicaciones de cómics con contenido enriquecido.
+- **Filtrado por Género**: Filtra los cómics por tus géneros favoritos.
+- **Búsqueda Inteligente**: Encuentra cómics rápidamente con la función de búsqueda.
+- **Panel de Administración**: Un dashboard completo para que los administradores gestionen las publicaciones.
 
-## Expanding the ESLint configuration
+## Cómo Empezar
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Para poner en marcha el proyecto en tu entorno local, sigue estos sencillos pasos.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerrequisitos
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+- **Node.js**: Asegúrate de tener Node.js instalado. Puedes descargarlo desde [nodejs.org](https://nodejs.org/).
+- **npm**: Generalmente se instala junto con Node.js.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Instalación
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clona el Repositorio**:
+   ```bash
+   git clone https://github.com/tu-usuario/comic-blog.git
+   cd comic-blog
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Instala las Dependencias**:
+   ```bash
+   npm install
+   ```
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3. **Configura Firebase**:
+   - Crea un proyecto en [Firebase](https://firebase.google.com/).
+   - Ve a la configuración de tu proyecto y copia tus credenciales de Firebase.
+   - Crea un archivo `.env` en la raíz del proyecto y añade tus credenciales:
+     ```
+     VITE_FIREBASE_API_KEY=tu_api_key
+     VITE_FIREBASE_AUTH_DOMAIN=tu_auth_domain
+     VITE_FIREBASE_PROJECT_ID=tu_project_id
+     VITE_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
+     VITE_FIREBASE_MESSAGING_SENDER_ID=tu_messaging_sender_id
+     VITE_FIREBASE_APP_ID=tu_app_id
+     ```
+
+### Scripts Disponibles
+
+- **`npm run dev`**: Inicia el servidor de desarrollo.
+- **`npm run build`**: Compila la aplicación para producción.
+- **`npm run lint`**: Analiza el código en busca de errores.
+- **`npm run preview`**: Previsualiza la compilación de producción.
+
+## Estructura del Proyecto
+
+- **`src/`**: Contiene el código fuente de la aplicación.
+  - **`components/`**: Componentes de React reutilizables.
+  - **`views/`**: Las diferentes vistas o páginas de la aplicación.
+  - **`services/`**: Lógica para interactuar con servicios externos como Firebase.
+  - **`assets/`**: Archivos estáticos como imágenes y hojas de estilo.
+- **`public/`**: Archivos públicos que no se procesan a través de Vite.
+
+## Contribuciones
+
+¡Las contribuciones son bienvenidas! Si deseas mejorar el proyecto, por favor, abre un *pull request* con tus cambios.
