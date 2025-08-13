@@ -3,6 +3,7 @@ import './App.css';
 import Home from './views/home';
 import Genero from './views/genero';
 import AdminLogin from './views/admin/login';
+import Dashboard from './views/admin/dashboard';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
           <Route path="/comics" element={<Home />} />
           <Route path="/generos" element={<Genero />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<Dashboard />} />
         </Routes>
       </Router>
     </div>

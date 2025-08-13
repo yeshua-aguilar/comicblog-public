@@ -1,0 +1,351 @@
+import React, { useState, useEffect } from 'react';
+import { getAllPosts } from '../../services/blogService';
+import type { BlogPost } from '../../types/blog';
+import '../../assets/css/dashboard.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+interface DashboardStats {
+  totalBlogs: number;
+  totalCategories: number;
+  recentBlogs: number;
+}
+
+const Dashboard: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<'stats' | 'create' | 'list'>('stats');
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({ totalBlogs: 0, totalCategories: 0, recentBlogs: 0 });
+  const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    author: '',
+    image: '',
+    content: '',
+    tags: '',
+    excerpt: ''
+  });
+
+  useEffect(() => {
+    loadBlogs();
+  }, []);
+
+  const loadBlogs = async () => {
+    try {
+      const allBlogs = await getAllPosts();
+      setBlogs(allBlogs);
+      
+      // Calcular estadísticas
+      const uniqueTags = new Set(allBlogs.flatMap(blog => blog.tags));
+      const recentDate = new Date();
+      recentDate.setMonth(recentDate.getMonth() - 1);
+      const recentBlogs = allBlogs.filter(blog => new Date(blog.date) > recentDate);
+      
+      setStats({
+        totalBlogs: allBlogs.length,
+        totalCategories: uniqueTags.size,
+        recentBlogs: recentBlogs.length
+      });
+    } catch (error) {
+      console.error('Error loading blogs:', error);
+    }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Aquí implementarías la lógica para guardar el blog
+    console.log('Blog data:', formData);
+    alert('Funcionalidad de guardado pendiente de implementar');
+  };
+
+  const handleEditBlog = (blog: BlogPost) => {
+    setEditingBlog(blog);
+    setFormData({
+      title: blog.title,
+      author: blog.author,
+      image: blog.image || '',
+      content: blog.content,
+      tags: blog.tags.join(', '),
+      excerpt: blog.excerpt
+    });
+    setActiveSection('create');
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      author: '',
+      image: '',
+      content: '',
+      tags: '',
+      excerpt: ''
+    });
+    setEditingBlog(null);
+  };
+
+  const renderStats = () => (
+    <div className="dashboard-content">
+      <h2 className="mb-4">Estadísticas del Blog</h2>
+      <div className="row">
+        <div className="col-md-4 mb-3">
+          <div className="card stats-card bg-primary text-white">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h3 className="card-title">{stats.totalBlogs}</h3>
+                  <p className="card-text">Total de Blogs</p>
+                </div>
+                <span className="display-4">📝</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4 mb-3">
+          <div className="card stats-card bg-success text-white">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h3 className="card-title">{stats.totalCategories}</h3>
+                  <p className="card-text">Categorías</p>
+                </div>
+                <span className="display-4">🏷️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4 mb-3">
+          <div className="card stats-card bg-info text-white">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h3 className="card-title">{stats.recentBlogs}</h3>
+                  <p className="card-text">Blogs Recientes</p>
+                </div>
+                <span className="display-4">⏰</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header">
+              <h5>Blogs Recientes</h5>
+            </div>
+            <div className="card-body">
+              {blogs.slice(0, 5).map((blog) => (
+                <div key={blog.slug} className="d-flex justify-content-between align-items-center border-bottom py-2">
+                  <div>
+                    <h6 className="mb-1">{blog.title}</h6>
+                    <small className="text-muted">Por {blog.author} - {blog.date}</small>
+                  </div>
+                  <span className="badge bg-secondary">{blog.tags.length} tags</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCreateForm = () => (
+    <div className="dashboard-content">
+      <h2 className="mb-4">{editingBlog ? 'Editar Blog' : 'Crear Nuevo Blog'}</h2>
+      <div className="card">
+        <div className="card-body">
+          <form onSubmit={handleFormSubmit}>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <label htmlFor="title" className="form-label">Título</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="col-md-6 mb-3">
+                <label htmlFor="author" className="form-label">Autor</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="author"
+                  value={formData.author}
+                  onChange={(e) => setFormData({...formData, author: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="image" className="form-label">URL de la Portada</label>
+              <input
+                type="url"
+                className="form-control"
+                id="image"
+                value={formData.image}
+                onChange={(e) => setFormData({...formData, image: e.target.value})}
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="tags" className="form-label">Tags (separados por comas)</label>
+              <input
+                type="text"
+                className="form-control"
+                id="tags"
+                value={formData.tags}
+                onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                placeholder="tecnología, programación, react"
+              />
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="excerpt" className="form-label">Extracto</label>
+              <textarea
+                className="form-control"
+                id="excerpt"
+                rows={3}
+                value={formData.excerpt}
+                onChange={(e) => setFormData({...formData, excerpt: e.target.value})}
+                placeholder="Breve descripción del blog..."
+              ></textarea>
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="content" className="form-label">Contenido del Blog</label>
+              <textarea
+                className="form-control"
+                id="content"
+                rows={10}
+                value={formData.content}
+                onChange={(e) => setFormData({...formData, content: e.target.value})}
+                placeholder="Escribe el contenido del blog en formato Markdown..."
+                required
+              ></textarea>
+            </div>
+            
+            <div className="d-flex gap-2">
+              <button type="submit" className="btn btn-primary">
+                {editingBlog ? 'Actualizar Blog' : 'Crear Blog'}
+              </button>
+              {editingBlog && (
+                <button type="button" className="btn btn-secondary" onClick={resetForm}>
+                  Cancelar Edición
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderBlogList = () => (
+    <div className="dashboard-content">
+      <h2 className="mb-4">Lista de Blogs</h2>
+      <div className="card">
+        <div className="card-header">
+          <h5>Todos los Blogs</h5>
+        </div>
+        <div className="card-body">
+          {blogs.map((blog) => (
+            <div key={blog.slug} className="border-bottom py-3">
+              <div className="row align-items-center">
+                <div className="col-lg-4 col-md-6 col-12 mb-2 mb-md-0">
+                  <h6 className="mb-1">{blog.title}</h6>
+                  <small className="text-muted">{blog.excerpt}</small>
+                </div>
+                <div className="col-lg-2 col-md-3 col-6 mb-2 mb-lg-0">
+                  <small className="text-muted">Por {blog.author}</small>
+                </div>
+                <div className="col-lg-2 col-md-3 col-6 mb-2 mb-lg-0">
+                  <small className="text-muted">{new Date(blog.date).toLocaleDateString()}</small>
+                </div>
+                <div className="col-lg-3 col-md-6 col-12 mb-2 mb-lg-0">
+                  <div className="d-flex flex-wrap gap-1">
+                    {blog.tags.map((tag, index) => (
+                      <span key={index} className="badge bg-primary">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="col-lg-1 col-md-12 col-12 d-flex justify-content-end mt-2 mt-lg-0">
+                   <button
+                      className="btn btn-sm btn-outline-primary px-3 d-flex align-items-center gap-2"
+                      onClick={() => handleEditBlog(blog)}
+                    >
+                      <span className="fw-bold">EDITAR</span>
+                    </button>
+                 </div>
+              </div>
+            </div>
+          ))}
+          {blogs.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-muted">No hay blogs disponibles</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="dashboard-container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h4 className="text-white">Dashboard</h4>
+        </div>
+        <nav className="sidebar-nav">
+          <ul className="nav flex-column">
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeSection === 'stats' ? 'active' : ''}`}
+                onClick={() => setActiveSection('stats')}
+              >
+                <span className="me-2">📊</span>
+                Estadísticas
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeSection === 'create' ? 'active' : ''}`}
+                onClick={() => {setActiveSection('create'); resetForm();}}
+              >
+                <span className="me-2">➕</span>
+                Crear Blog
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className={`nav-link ${activeSection === 'list' ? 'active' : ''}`}
+                onClick={() => setActiveSection('list')}
+              >
+                <span className="me-2">📋</span>
+                Lista de Blogs
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="container-fluid">
+          {activeSection === 'stats' && renderStats()}
+          {activeSection === 'create' && renderCreateForm()}
+          {activeSection === 'list' && renderBlogList()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
