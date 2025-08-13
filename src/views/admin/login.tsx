@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import type { AuthError } from 'firebase/auth';
+import { auth } from '../../services/firebase';
 import '../../assets/css/login.css';
 
 function AdminLogin() {
@@ -9,6 +12,7 @@ function AdminLogin() {
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,13 +25,45 @@ function AdminLogin() {
 
     try {
       setSubmitting(true);
-      // TODO: Integrar autenticación real aquí
-      // Simulación de petición
-      await new Promise((res) => setTimeout(res, 900));
-      // Redirigir o actualizar estado de sesión
-      alert('Inicio de sesión exitoso (demo)');
-    } catch {
-      setError('Error al iniciar sesión. Intenta nuevamente.');
+      
+      // Autenticación con Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      console.log('Usuario autenticado:', user);
+      
+      // Guardar token si "Recuérdame" está marcado
+      if (remember) {
+        localStorage.setItem('rememberUser', 'true');
+      }
+      
+      // Redirigir al panel de administración
+      navigate('/admin/dashboard'); // Ajusta la ruta según tu aplicación
+      
+    } catch (error) {
+      const authError = error as AuthError;
+      
+      // Manejar diferentes tipos de errores de Firebase
+      switch (authError.code) {
+        case 'auth/user-not-found':
+          setError('No existe una cuenta con este correo electrónico.');
+          break;
+        case 'auth/wrong-password':
+          setError('Contraseña incorrecta.');
+          break;
+        case 'auth/invalid-email':
+          setError('El formato del correo electrónico no es válido.');
+          break;
+        case 'auth/user-disabled':
+          setError('Esta cuenta ha sido deshabilitada.');
+          break;
+        case 'auth/too-many-requests':
+          setError('Demasiados intentos fallidos. Intenta más tarde.');
+          break;
+        default:
+          setError('Error al iniciar sesión. Intenta nuevamente.');
+          console.error('Error de autenticación:', authError);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +163,6 @@ function AdminLogin() {
               </div>
             </div>
 
-            {/* Sello de seguridad / pie */}
             <div className="text-center mt-3">
               <small className="text-white">© {new Date().getFullYear()} ComicFlix • Área Administrativa</small>
             </div>
