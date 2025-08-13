@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllPosts, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
+import { getAllPosts, createPost, updatePost, deletePost, createPostWithSlug, invalidatePostsCache } from '../../services/blogService';
 import type { BlogPost } from '../../types/blog';
 import '../../assets/css/dashboard.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -34,7 +34,6 @@ const Dashboard: React.FC = () => {
       const allBlogs = await getAllPosts();
       setBlogs(allBlogs);
       
-      // Calcular estadísticas
       const uniqueTags = new Set(allBlogs.flatMap(blog => blog.tags));
       const recentDate = new Date();
       recentDate.setMonth(recentDate.getMonth() - 1);
@@ -46,7 +45,7 @@ const Dashboard: React.FC = () => {
         recentBlogs: recentBlogs.length
       });
     } catch (error) {
-      console.error('Error loading blogs:', error);
+      console.error('Error al cargar blogs:', error);
     }
   };
 
@@ -69,19 +68,19 @@ const Dashboard: React.FC = () => {
         alert('Blog actualizado exitosamente');
       } else {
         if (formData.slug.trim()) {
-          const ok = await createPostWithSlug(formData.slug.trim(), postData);
-          if (!ok) throw new Error('No se pudo crear con slug personalizado');
+          await createPostWithSlug(formData.slug.trim(), postData);
         } else {
           await createPost(postData);
         }
         alert('Blog creado exitosamente');
       }
       
+      invalidatePostsCache(); // Invalidar caché
       resetForm();
       loadBlogs();
       setActiveSection('list');
     } catch (error) {
-      console.error('Error saving blog:', error);
+      console.error('Error al guardar el blog:', error);
       alert('Error al guardar el blog');
     }
   };
@@ -104,14 +103,17 @@ const Dashboard: React.FC = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este blog?')) {
       try {
         await deletePost(slug);
+        invalidatePostsCache(); // Invalidar caché
         alert('Blog eliminado exitosamente');
         loadBlogs();
       } catch (error) {
-        console.error('Error deleting blog:', error);
+        console.error('Error al eliminar el blog:', error);
         alert('Error al eliminar el blog');
       }
     }
   };
+
+
 
   const resetForm = () => {
     setFormData({
@@ -317,28 +319,28 @@ const Dashboard: React.FC = () => {
           {blogs.map((blog) => (
             <div key={blog.slug} className="border-bottom py-3">
               <div className="row align-items-center">
-                <div className="col-lg-4 col-md-6 col-12 mb-2 mb-md-0">
+                <div className="col-lg-4 col-md-4 col-12 mb-2 mb-md-0">
                   <h6 className="mb-1">{blog.title}</h6>
                   <small className="text-muted">{blog.excerpt}</small>
                 </div>
-                <div className="col-lg-2 col-md-3 col-6 mb-2 mb-lg-0">
+                <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
                   <small className="text-muted">Por {blog.author}</small>
                 </div>
-                <div className="col-lg-2 col-md-3 col-6 mb-2 mb-lg-0">
+                <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
                   <small className="text-muted">{new Date(blog.date).toLocaleDateString()}</small>
                 </div>
-                <div className="col-lg-3 col-md-6 col-12 mb-2 mb-lg-0">
+                <div className="col-lg-2 col-md-2 col-12 mb-2 mb-lg-0">
                   <div className="d-flex flex-wrap gap-1">
                     {blog.tags.map((tag, index) => (
-                      <span key={index} className="badge bg-primary">
+                      <span key={index} className="badge bg-danger">
                         {tag}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="col-lg-1 col-md-12 col-12 d-flex justify-content-end gap-2 mt-2 mt-lg-0">
+                <div className="col-lg-2 col-md-2 col-12 d-flex justify-content-end gap-1 mt-2 mt-lg-0">
                    <button
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn btn-sm btn-outline-warning"
                       onClick={() => handleEditBlog(blog)}
                       title="Editar blog"
                     >

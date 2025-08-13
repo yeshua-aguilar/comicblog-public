@@ -1,49 +1,35 @@
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, setDoc, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import type { BlogPost } from '../types/blog';
 
-// Nombre de la colección en Firestore (ajustada para coincidir con tu BD)
 const POSTS_COLLECTION = 'blogs';
 
-// Utilidad: normaliza el campo tags que puede venir como array o string
+// Cache en memoria para getAllPosts
+let postsCache: BlogPost[] | null = null;
+let cacheTimestamp: number | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+let ongoingRequest: Promise<BlogPost[]> | null = null;
+
 function normalizeTags(raw: unknown): string[] {
-  console.log('normalizeTags input:', raw, 'type:', typeof raw);
-  
-  if (!raw) {
-    console.log('normalizeTags: no raw data, returning empty array');
-    return [];
-  }
-  
+  if (!raw) return [];
   if (Array.isArray(raw)) {
-    const result = raw.filter(tag => typeof tag === 'string' && tag.trim() !== '');
-    console.log('normalizeTags: array input, result:', result);
-    return result;
+    return raw.filter(tag => typeof tag === 'string' && tag.trim() !== '');
   }
-  
   if (typeof raw === 'string') {
-    // Manejar formato "{tag1,tag2,tag3}"
     const cleaned = raw.replace(/[{}]/g, '').trim();
-    const result = cleaned ? cleaned.split(',').map(tag => tag.trim()).filter(tag => tag !== '') : [];
-    console.log('normalizeTags: string input, cleaned:', cleaned, 'result:', result);
-    return result;
+    return cleaned ? cleaned.split(',').map(tag => tag.trim()).filter(tag => tag !== '') : [];
   }
-  
-  console.log('normalizeTags: unknown format, returning empty array');
   return [];
 }
 
-function toBlogPost(id: string, data: Record<string, Timestamp>): BlogPost {
-  // Fecha: puede venir como string, Timestamp o no existir
-  let date: string = '';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toBlogPost(id: string, data: Record<string, any>): BlogPost {
+  let date: string = new Date().toISOString().slice(0, 10);
   const rawDate = data.date ?? data.fecha ?? data.fecha_creacion ?? data.createdAt;
   if (rawDate && typeof rawDate.toDate === 'function') {
-    // Timestamp de Firestore
     date = rawDate.toDate().toISOString().slice(0, 10);
   } else if (typeof rawDate === 'string') {
     date = rawDate;
-  } else {
-    // fallback a hoy si no existe
-    date = new Date().toISOString().slice(0, 10);
   }
 
   return {
@@ -58,36 +44,59 @@ function toBlogPost(id: string, data: Record<string, Timestamp>): BlogPost {
   };
 }
 
-// Función para obtener todos los posts desde Firestore
-export const getAllPosts = async (): Promise<BlogPost[]> => {
-  console.log('getAllPosts called - fetching from Firestore');
-  try {
-    const postsRef = collection(db, POSTS_COLLECTION);
-    // Si date no existe o no es homogéneo, evitamos fallar con orderBy. Cargamos todo y ordenamos en cliente.
-    const querySnapshot = await getDocs(postsRef);
-
-    const posts: BlogPost[] = [];
-    querySnapshot.forEach((d) => {
-      const rawData = d.data();
-      console.log(`Processing document ${d.id}:`, rawData);
-      const post = toBlogPost(d.id, rawData);
-      console.log(`Processed post:`, post);
-      posts.push(post);
-    });
-
-    // Orden descendente por fecha (YYYY-MM-DD)
-    posts.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    console.log(`Total posts loaded from Firestore: ${posts.length}`);
-    return posts;
-  } catch (error) {
-    console.error('Error fetching posts from Firestore:', error);
-    console.error('Error details:', error);
-    return [];
-  }
+export const invalidatePostsCache = () => {
+  postsCache = null;
+  cacheTimestamp = null;
+  console.log('Cache de posts invalidada');
 };
 
-// Función para obtener un post específico por slug
+export const getAllPosts = async (): Promise<BlogPost[]> => {
+  const now = Date.now();
+  if (postsCache && cacheTimestamp && now - cacheTimestamp < CACHE_DURATION) {
+    console.log('getAllPosts: Devolviendo posts desde caché');
+    return postsCache;
+  }
+
+  if (ongoingRequest) {
+    console.log('getAllPosts: Solicitud ya en curso, devolviendo promesa existente');
+    return ongoingRequest;
+  }
+
+  console.log('getAllPosts: Obteniendo posts desde Firestore');
+  ongoingRequest = (async () => {
+    try {
+      const postsRef = collection(db, POSTS_COLLECTION);
+      const querySnapshot = await getDocs(postsRef);
+
+      const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
+      posts.sort((a, b) => b.date.localeCompare(a.date));
+
+      postsCache = posts;
+      cacheTimestamp = now;
+      console.log(`Total de posts cargados desde Firestore: ${posts.length}`);
+      return posts;
+    } catch (error) {
+      console.error('Error al obtener posts desde Firestore:', error);
+      return []; // Devuelve un array vacío en caso de error
+    } finally {
+      ongoingRequest = null; // Limpia la solicitud en curso
+    }
+  })();
+
+  return ongoingRequest;
+};
+
 export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
+  // Primero, intentar obtener del caché si existe
+  if (postsCache) {
+    const postFromCache = postsCache.find(p => p.slug === slug);
+    if (postFromCache) {
+      console.log(`getPostBySlug: Devolviendo post "${slug}" desde caché`);
+      return postFromCache;
+    }
+  }
+
+  console.log(`getPostBySlug: Obteniendo post "${slug}" desde Firestore`);
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
     const docSnap = await getDoc(docRef);
@@ -95,28 +104,28 @@ export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
     if (docSnap.exists()) {
       return toBlogPost(docSnap.id, docSnap.data());
     } else {
-      console.log('No such document!');
+      console.log('El documento no existe!');
       return null;
     }
   } catch (error) {
-    console.error('Error fetching post by slug:', error);
+    console.error('Error al obtener post por slug:', error);
     return null;
   }
 };
 
-// Función para obtener posts por tag (soporta tags guardados como string)
 export const getPostsByTag = async (tag: string): Promise<BlogPost[]> => {
+  console.log(`getPostsByTag: Buscando posts con el tag "${tag}" en Firestore`);
   try {
     const postsRef = collection(db, POSTS_COLLECTION);
-    const querySnapshot = await getDocs(postsRef);
+    const q = query(postsRef, where('tags', 'array-contains', tag));
+    const querySnapshot = await getDocs(q);
+    
+    const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
+    posts.sort((a, b) => b.date.localeCompare(a.date));
 
-    const posts: BlogPost[] = [];
-    querySnapshot.forEach((d) => posts.push(toBlogPost(d.id, d.data())));
-
-    const target = tag.toLowerCase();
-    return posts.filter((p) => p.tags.some((t) => t.toLowerCase() === target));
+    return posts;
   } catch (error) {
-    console.error('Error fetching posts by tag:', error);
+    console.error('Error al obtener posts por tag:', error);
     return [];
   }
 };
