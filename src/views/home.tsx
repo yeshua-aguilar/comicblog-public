@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import BlogList from '../components/BlogList';
 import BlogPostComponent from '../components/BlogPost';
-import { getPostsPaginated, getPostBySlug } from '../services/blogService';
+import { getComicsList, getPostBySlug } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
 function Home() {
@@ -12,10 +12,8 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [lastDoc, setLastDoc] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMore] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,41 +21,23 @@ function Home() {
     const loadPosts = async () => {
       setLoading(true);
       try {
-        // Cargar primera página de posts
-        const result = await getPostsPaginated(9);
-        setPosts(result.posts);
-        setFilteredPosts(result.posts);
-        setLastDoc(result.lastDoc);
-        setHasMore(result.hasMore);
+        // OPTIMIZADO: Cargar lista de cómics desde el manifiesto
+        const comics = await getComicsList();
+        setPosts(comics);
+        setFilteredPosts(comics);
+        setHasMore(false); // No paginación con manifiesto
       } catch (error) {
-        console.error('Error loading posts:', error);
+        console.error('Error loading comics:', error);
       } finally {
         setLoading(false);
       }
     };
     loadPosts();
-  }, []);
+  });
 
   const loadMorePosts = async () => {
-    if (!hasMore || loadingMore) return;
-    
-    setLoadingMore(true);
-    try {
-      const result = await getPostsPaginated(9, lastDoc);
-      const newPosts = [...posts, ...result.posts];
-      setPosts(newPosts);
-      setFilteredPosts(searchTerm ? newPosts.filter(post =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      ) : newPosts);
-      setLastDoc(result.lastDoc);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      console.error('Error loading more posts:', error);
-    } finally {
-      setLoadingMore(false);
-    }
+    // OPTIMIZADO: No hay paginación con manifiesto
+    return;
   };
 
   // Sync view with route

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getAllPosts, getPostsPaginated, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
+import { getComicsList, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
 import type { BlogPost } from '../../types/blog';
 import '../../assets/css/dashboard.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { auth } from '../../services/firebase';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
   totalBlogs: number;
@@ -15,10 +18,8 @@ const Dashboard: React.FC = () => {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ totalBlogs: 0, totalCategories: 0, recentBlogs: 0 });
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [lastDoc, setLastDoc] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMore] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -36,21 +37,17 @@ const Dashboard: React.FC = () => {
   const loadBlogs = async (reset: boolean = true) => {
     try {
       if (reset) {
-        // Cargar primera página
-        const result = await getPostsPaginated(12); // Cargar más en admin
-        setBlogs(result.posts);
-        setLastDoc(result.lastDoc);
-        setHasMore(result.hasMore);
-        
-        // Para estadísticas, necesitamos el total (solo una vez)
-        const allBlogs = await getAllPosts();
-        const uniqueTags = new Set(allBlogs.flatMap(blog => blog.tags));
+        // Cargar lista completa desde el manifiesto
+        const comics = await getComicsList();
+        setBlogs(comics);
+        setHasMore(false);
+        // Estadísticas
+        const uniqueTags = new Set(comics.flatMap(blog => blog.tags));
         const recentDate = new Date();
         recentDate.setMonth(recentDate.getMonth() - 1);
-        const recentBlogs = allBlogs.filter(blog => new Date(blog.date) > recentDate);
-        
+        const recentBlogs = comics.filter(blog => new Date(blog.date) > recentDate);
         setStats({
-          totalBlogs: allBlogs.length,
+          totalBlogs: comics.length,
           totalCategories: uniqueTags.size,
           recentBlogs: recentBlogs.length
         });
@@ -61,19 +58,8 @@ const Dashboard: React.FC = () => {
   };
 
   const loadMoreBlogs = async () => {
-    if (!hasMore || loadingMore) return;
-    
-    setLoadingMore(true);
-    try {
-      const result = await getPostsPaginated(12, lastDoc);
-      setBlogs(prev => [...prev, ...result.posts]);
-      setLastDoc(result.lastDoc);
-      setHasMore(result.hasMore);
-    } catch (error) {
-      console.error('Error al cargar más blogs:', error);
-    } finally {
-      setLoadingMore(false);
-    }
+    // Deshabilitado: toda la lista se carga desde el manifiesto
+    return;
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -412,6 +398,17 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -448,10 +445,27 @@ const Dashboard: React.FC = () => {
                 Lista de Blogs
               </button>
             </li>
+            <li className="nav-item">
+              <button
+                className="nav-link"
+                onClick={handleLogout}
+              >
+                <span className="me-2">🚪</span>
+                Cerrar sesión
+              </button>
+            </li>
+            <li className="nav-item">
+              <button
+                className="nav-link"
+                onClick={handleGoHome}
+              >
+                <span className="me-2">🏠</span>
+                Ir a Home
+              </button>
+            </li>
           </ul>
         </nav>
       </div>
-
       {/* Main Content */}
       <div className="main-content">
         <div className="container-fluid">

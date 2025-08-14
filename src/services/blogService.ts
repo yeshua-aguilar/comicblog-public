@@ -3,6 +3,8 @@ import { db } from './firebase';
 import type { BlogPost } from '../types/blog';
 
 const POSTS_COLLECTION = 'blogs';
+const CONTENT_COLLECTION = 'contenido';
+const CONTENT_DOC_ID = 'xacHrp80QFdcaQZhehl4';
 
 // Configuración de paginación
 const DEFAULT_PAGE_SIZE = 9; // Número de posts por página
@@ -82,9 +84,55 @@ export const getPostsPaginated = async (
 let genresCache: { data: { genre: string; count: number }[]; timestamp: number } | null = null;
 const GENRES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
+// Cache para la lista de cómics (manifiesto)
+let comicsListCache: { data: BlogPost[]; timestamp: number } | null = null;
+const COMICS_LIST_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// Nueva función para obtener la lista de cómics desde un documento "manifiesto"
+export const getComicsList = async (): Promise<BlogPost[]> => {
+  if (comicsListCache && (Date.now() - comicsListCache.timestamp) < COMICS_LIST_CACHE_DURATION) {
+    console.log('getComicsList: Devolviendo cómics desde caché');
+    return comicsListCache.data;
+  }
+
+  console.log('getComicsList: Obteniendo lista de cómics desde el manifiesto de contenido');
+  try {
+    const docRef = doc(db, CONTENT_COLLECTION, CONTENT_DOC_ID);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const comicsData = data.comics || [];
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const posts: BlogPost[] = comicsData.map((comicData: any) => toBlogPost(comicData.slug, comicData));
+      posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      comicsListCache = {
+        data: posts,
+        timestamp: Date.now()
+      };
+      
+      console.log(`Total de cómics cargados desde manifiesto: ${posts.length}`);
+      return posts;
+    } else {
+      console.log('El documento de contenido no existe!');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error al obtener la lista de cómics desde el manifiesto:', error);
+    return [];
+  }
+};
+
+export const invalidateComicsListCache = (): void => {
+  comicsListCache = null;
+  console.log('Cache de la lista de cómics invalidado');
+};
+
+
 // Función OPTIMIZADA para obtener solo los géneros/tags (sin contenido completo)
-// Esta función reduce significativamente el uso de ancho de banda y lecturas
-// Incluye caché en memoria para evitar llamadas repetidas
+// Esta función ahora usa el manifiesto de cómics para ser más eficiente
 export const getGenresWithCounts = async (): Promise<{ genre: string; count: number }[]> => {
   // Verificar si hay datos en caché válidos
   if (genresCache && (Date.now() - genresCache.timestamp) < GENRES_CACHE_DURATION) {
@@ -92,18 +140,14 @@ export const getGenresWithCounts = async (): Promise<{ genre: string; count: num
     return genresCache.data;
   }
 
-  console.log('getGenresWithCounts: Obteniendo documentos y procesando solo tags para optimizar');
+  console.log('getGenresWithCounts: Obteniendo cómics desde el manifiesto para contar géneros');
   try {
-    const postsRef = collection(db, POSTS_COLLECTION);
-    // Obtener todos los documentos pero procesar solo los tags
-    const querySnapshot = await getDocs(postsRef);
+    const posts = await getComicsList(); 
 
     const genreMap = new Map<string, number>();
     
-    querySnapshot.docs.forEach(doc => {
-      const data = doc.data();
-      // Solo procesar el campo 'tags' para optimizar el procesamiento
-      const tags = normalizeTags(data.tags);
+    posts.forEach(post => {
+      const tags = normalizeTags(post.tags);
       tags.forEach(tag => {
         genreMap.set(tag, (genreMap.get(tag) || 0) + 1);
       });
@@ -119,10 +163,10 @@ export const getGenresWithCounts = async (): Promise<{ genre: string; count: num
       timestamp: Date.now()
     };
 
-    console.log(`Géneros procesados: ${genresWithCounts.length}, Total de documentos: ${querySnapshot.docs.length}`);
+    console.log(`Géneros procesados desde manifiesto: ${genresWithCounts.length}`);
     return genresWithCounts;
   } catch (error) {
-    console.error('Error al obtener géneros optimizado:', error);
+    console.error('Error al obtener géneros desde el manifiesto:', error);
     return [];
   }
 };
@@ -187,6 +231,19 @@ export const getPostsByTag = async (tag: string): Promise<BlogPost[]> => {
   }
 };
 
+// Actualiza el manifiesto de cómics en Firestore
+const updateComicsManifest = async (): Promise<void> => {
+  try {
+    const posts = await getAllPosts();
+    const docRef = doc(db, CONTENT_COLLECTION, CONTENT_DOC_ID);
+    await updateDoc(docRef, { comics: posts });
+    invalidateComicsListCache();
+    console.log('Manifiesto de cómics actualizado en Firestore');
+  } catch (error) {
+    console.error('Error al actualizar el manifiesto de cómics:', error);
+  }
+};
+
 // Función para crear un nuevo post (escribe campos en inglés y español para compatibilidad)
 export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<string | null> => {
   try {
@@ -203,8 +260,9 @@ export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<stri
     };
 
     const docRef = await addDoc(postsRef, payload);
-    // Invalidar caché de géneros ya que se agregó un nuevo post
     invalidateGenresCache();
+    invalidateComicsListCache();
+    await updateComicsManifest();
     console.log('Post created with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
@@ -243,10 +301,11 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
     }
 
     await updateDoc(docRef, payload);
-    // Invalidar caché de géneros si se actualizaron los tags
     if (postData.tags !== undefined) {
       invalidateGenresCache();
     }
+    invalidateComicsListCache();
+    await updateComicsManifest();
     console.log('Post updated successfully');
     return true;
   } catch (error) {
@@ -260,8 +319,9 @@ export const deletePost = async (slug: string): Promise<boolean> => {
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
     await deleteDoc(docRef);
-    // Invalidar caché de géneros ya que se eliminó un post
     invalidateGenresCache();
+    invalidateComicsListCache();
+    await updateComicsManifest();
     console.log('Post deleted successfully');
     return true;
   } catch (error) {
@@ -276,7 +336,6 @@ export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 
     const docRef = doc(db, POSTS_COLLECTION, slug);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: Record<string, any> = {
-      // en español (compatibilidad con documentos existentes)
       titulo: postData.title,
       autor: postData.author,
       fecha: postData.date,
@@ -287,8 +346,9 @@ export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 
     };
 
     await setDoc(docRef, payload);
-    // Invalidar caché de géneros ya que se creó un nuevo post
     invalidateGenresCache();
+    invalidateComicsListCache();
+    await updateComicsManifest();
     console.log('Post created with custom slug:', slug);
     return true;
   } catch (error) {
