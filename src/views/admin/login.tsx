@@ -120,7 +120,8 @@ function AdminLogin() {
                         </div>
                         <button
                           type="button"
-                          className="btn btn-sm btn-outline-secondary toggle-password"
+                          className="btn btn-sm btn-outline-secondary toggle-password px-2 py-1"
+                          style={{ fontSize: '0.9rem', height: '2.2rem', minWidth: '70px' }}
                           onClick={() => setShowPassword((s) => !s)}
                           aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         >
