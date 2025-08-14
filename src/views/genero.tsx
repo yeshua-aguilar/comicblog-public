@@ -1,36 +1,37 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAllPosts } from '../services/blogService';
-import type { BlogPost } from '../types/blog';
+import { getGenresWithCounts } from '../services/blogService';
 import '../assets/css/genero.css';
 
 function Genero() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [genresWithCounts, setGenresWithCounts] = useState<{ genre: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [totalPosts, setTotalPosts] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadPosts = async () => {
+    const loadGenres = async () => {
       setLoading(true);
       try {
-        const all = await getAllPosts();
-        setPosts(all);
+        // ✅ OPTIMIZADO: Solo procesa los tags, ignora el resto del contenido
+        // Beneficios de optimización:
+        // - Procesa solo el campo 'tags' en el cliente (ignora contenido, imágenes, etc.)
+        // - Incluye caché en memoria (5 min) para evitar llamadas repetidas
+        // - Procesa conteos en el cliente para mejor rendimiento
+        // - Se invalida automáticamente al crear/actualizar/eliminar posts
+        const genres = await getGenresWithCounts();
+        setGenresWithCounts(genres);
+        // Calcular total de posts basado en los conteos de géneros
+        const total = genres.reduce((sum, { count }) => sum + count, 0);
+        setTotalPosts(total);
       } catch (e) {
-        console.error('Error loading posts:', e);
+        console.error('Error loading genres:', e);
       } finally {
         setLoading(false);
       }
     };
-    loadPosts();
+    loadGenres();
   }, []);
-
-  const genresWithCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    posts.forEach(p => p.tags.forEach(t => map.set(t, (map.get(t) || 0) + 1)));
-    return Array.from(map.entries())
-      .map(([genre, count]) => ({ genre, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [posts]);
 
   // Improved Bootstrap color palette with gradients and better contrast
   const genreColors = [
@@ -107,7 +108,7 @@ function Genero() {
               <>
                 <div className="text-center mb-5">
                   <h2 className="text-white mb-3">Géneros Disponibles</h2>
-                  <p className="text-muted">{genresWithCounts.length} géneros • {posts.length} posts totales</p>
+                  <p className="text-muted">{genresWithCounts.length} géneros • {totalPosts} posts totales</p>
                 </div>
 
                 <div className="row g-4">

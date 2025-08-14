@@ -1,14 +1,11 @@
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, setDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, setDoc, query, where, orderBy, limit, startAfter, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import type { BlogPost } from '../types/blog';
 
 const POSTS_COLLECTION = 'blogs';
 
-// Cache en memoria para getAllPosts
-let postsCache: BlogPost[] | null = null;
-let cacheTimestamp: number | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
-let ongoingRequest: Promise<BlogPost[]> | null = null;
+// Configuración de paginación
+const DEFAULT_PAGE_SIZE = 9; // Número de posts por página
 
 function normalizeTags(raw: unknown): string[] {
   if (!raw) return [];
@@ -44,58 +41,118 @@ function toBlogPost(id: string, data: Record<string, any>): BlogPost {
   };
 }
 
-export const invalidatePostsCache = () => {
-  postsCache = null;
-  cacheTimestamp = null;
-  console.log('Cache de posts invalidada');
+// Función paginada para obtener posts (OPTIMIZADA para Firebase)
+export const getPostsPaginated = async (
+  pageSize: number = DEFAULT_PAGE_SIZE,
+  lastDoc?: QueryDocumentSnapshot
+): Promise<{ posts: BlogPost[]; lastDoc: QueryDocumentSnapshot | null; hasMore: boolean }> => {
+  try {
+    const postsRef = collection(db, POSTS_COLLECTION);
+    let q = query(
+      postsRef,
+      orderBy('fecha', 'desc'), // Ordenar por fecha descendente
+      limit(pageSize)
+    );
+
+    // Si hay un documento anterior, continuar desde ahí
+    if (lastDoc) {
+      q = query(
+        postsRef,
+        orderBy('fecha', 'desc'),
+        startAfter(lastDoc),
+        limit(pageSize)
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
+    
+    const newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+    const hasMore = querySnapshot.docs.length === pageSize;
+
+    console.log(`Posts cargados: ${posts.length}, Hay más: ${hasMore}`);
+    return { posts, lastDoc: newLastDoc, hasMore };
+  } catch (error) {
+    console.error('Error al obtener posts paginados:', error);
+    return { posts: [], lastDoc: null, hasMore: false };
+  }
 };
 
+// Cache para géneros (válido por 5 minutos)
+let genresCache: { data: { genre: string; count: number }[]; timestamp: number } | null = null;
+const GENRES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// Función OPTIMIZADA para obtener solo los géneros/tags (sin contenido completo)
+// Esta función reduce significativamente el uso de ancho de banda y lecturas
+// Incluye caché en memoria para evitar llamadas repetidas
+export const getGenresWithCounts = async (): Promise<{ genre: string; count: number }[]> => {
+  // Verificar si hay datos en caché válidos
+  if (genresCache && (Date.now() - genresCache.timestamp) < GENRES_CACHE_DURATION) {
+    console.log('getGenresWithCounts: Devolviendo géneros desde caché');
+    return genresCache.data;
+  }
+
+  console.log('getGenresWithCounts: Obteniendo documentos y procesando solo tags para optimizar');
+  try {
+    const postsRef = collection(db, POSTS_COLLECTION);
+    // Obtener todos los documentos pero procesar solo los tags
+    const querySnapshot = await getDocs(postsRef);
+
+    const genreMap = new Map<string, number>();
+    
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      // Solo procesar el campo 'tags' para optimizar el procesamiento
+      const tags = normalizeTags(data.tags);
+      tags.forEach(tag => {
+        genreMap.set(tag, (genreMap.get(tag) || 0) + 1);
+      });
+    });
+
+    const genresWithCounts = Array.from(genreMap.entries())
+      .map(([genre, count]) => ({ genre, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Guardar en caché
+    genresCache = {
+      data: genresWithCounts,
+      timestamp: Date.now()
+    };
+
+    console.log(`Géneros procesados: ${genresWithCounts.length}, Total de documentos: ${querySnapshot.docs.length}`);
+    return genresWithCounts;
+  } catch (error) {
+    console.error('Error al obtener géneros optimizado:', error);
+    return [];
+  }
+};
+
+// Función para invalidar el caché de géneros (llamar cuando se creen/actualicen/eliminen posts)
+export const invalidateGenresCache = (): void => {
+  genresCache = null;
+  console.log('Cache de géneros invalidado');
+};
+
+// Función para obtener TODOS los posts (SOLO para casos específicos como genero.tsx)
+// ⚠️ ADVERTENCIA: Esta función lee TODOS los documentos y puede ser costosa
 export const getAllPosts = async (): Promise<BlogPost[]> => {
-  const now = Date.now();
-  if (postsCache && cacheTimestamp && now - cacheTimestamp < CACHE_DURATION) {
-    console.log('getAllPosts: Devolviendo posts desde caché');
-    return postsCache;
+  console.log('⚠️ getAllPosts: Esta función lee TODOS los documentos y puede ser costosa');
+  try {
+    const postsRef = collection(db, POSTS_COLLECTION);
+    const querySnapshot = await getDocs(postsRef);
+
+    const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
+    posts.sort((a, b) => b.date.localeCompare(a.date));
+
+    console.log(`Total de posts cargados desde Firestore: ${posts.length}`);
+    return posts;
+  } catch (error) {
+    console.error('Error al obtener posts desde Firestore:', error);
+    return [];
   }
-
-  if (ongoingRequest) {
-    console.log('getAllPosts: Solicitud ya en curso, devolviendo promesa existente');
-    return ongoingRequest;
-  }
-
-  console.log('getAllPosts: Obteniendo posts desde Firestore');
-  ongoingRequest = (async () => {
-    try {
-      const postsRef = collection(db, POSTS_COLLECTION);
-      const querySnapshot = await getDocs(postsRef);
-
-      const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
-      posts.sort((a, b) => b.date.localeCompare(a.date));
-
-      postsCache = posts;
-      cacheTimestamp = now;
-      console.log(`Total de posts cargados desde Firestore: ${posts.length}`);
-      return posts;
-    } catch (error) {
-      console.error('Error al obtener posts desde Firestore:', error);
-      return []; // Devuelve un array vacío en caso de error
-    } finally {
-      ongoingRequest = null; // Limpia la solicitud en curso
-    }
-  })();
-
-  return ongoingRequest;
 };
 
 export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
-  // Primero, intentar obtener del caché si existe
-  if (postsCache) {
-    const postFromCache = postsCache.find(p => p.slug === slug);
-    if (postFromCache) {
-      console.log(`getPostBySlug: Devolviendo post "${slug}" desde caché`);
-      return postFromCache;
-    }
-  }
-
   console.log(`getPostBySlug: Obteniendo post "${slug}" desde Firestore`);
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
@@ -146,6 +203,8 @@ export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<stri
     };
 
     const docRef = await addDoc(postsRef, payload);
+    // Invalidar caché de géneros ya que se agregó un nuevo post
+    invalidateGenresCache();
     console.log('Post created with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
@@ -184,6 +243,10 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
     }
 
     await updateDoc(docRef, payload);
+    // Invalidar caché de géneros si se actualizaron los tags
+    if (postData.tags !== undefined) {
+      invalidateGenresCache();
+    }
     console.log('Post updated successfully');
     return true;
   } catch (error) {
@@ -197,7 +260,8 @@ export const deletePost = async (slug: string): Promise<boolean> => {
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
     await deleteDoc(docRef);
-
+    // Invalidar caché de géneros ya que se eliminó un post
+    invalidateGenresCache();
     console.log('Post deleted successfully');
     return true;
   } catch (error) {
@@ -223,6 +287,8 @@ export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 
     };
 
     await setDoc(docRef, payload);
+    // Invalidar caché de géneros ya que se creó un nuevo post
+    invalidateGenresCache();
     console.log('Post created with custom slug:', slug);
     return true;
   } catch (error) {

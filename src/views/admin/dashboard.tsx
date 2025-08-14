@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllPosts, createPost, updatePost, deletePost, createPostWithSlug, invalidatePostsCache } from '../../services/blogService';
+import { getAllPosts, getPostsPaginated, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
 import type { BlogPost } from '../../types/blog';
 import '../../assets/css/dashboard.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -15,6 +15,10 @@ const Dashboard: React.FC = () => {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ totalBlogs: 0, totalCategories: 0, recentBlogs: 0 });
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -29,23 +33,46 @@ const Dashboard: React.FC = () => {
     loadBlogs();
   }, []);
 
-  const loadBlogs = async () => {
+  const loadBlogs = async (reset: boolean = true) => {
     try {
-      const allBlogs = await getAllPosts();
-      setBlogs(allBlogs);
-      
-      const uniqueTags = new Set(allBlogs.flatMap(blog => blog.tags));
-      const recentDate = new Date();
-      recentDate.setMonth(recentDate.getMonth() - 1);
-      const recentBlogs = allBlogs.filter(blog => new Date(blog.date) > recentDate);
-      
-      setStats({
-        totalBlogs: allBlogs.length,
-        totalCategories: uniqueTags.size,
-        recentBlogs: recentBlogs.length
-      });
+      if (reset) {
+        // Cargar primera página
+        const result = await getPostsPaginated(12); // Cargar más en admin
+        setBlogs(result.posts);
+        setLastDoc(result.lastDoc);
+        setHasMore(result.hasMore);
+        
+        // Para estadísticas, necesitamos el total (solo una vez)
+        const allBlogs = await getAllPosts();
+        const uniqueTags = new Set(allBlogs.flatMap(blog => blog.tags));
+        const recentDate = new Date();
+        recentDate.setMonth(recentDate.getMonth() - 1);
+        const recentBlogs = allBlogs.filter(blog => new Date(blog.date) > recentDate);
+        
+        setStats({
+          totalBlogs: allBlogs.length,
+          totalCategories: uniqueTags.size,
+          recentBlogs: recentBlogs.length
+        });
+      }
     } catch (error) {
       console.error('Error al cargar blogs:', error);
+    }
+  };
+
+  const loadMoreBlogs = async () => {
+    if (!hasMore || loadingMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const result = await getPostsPaginated(12, lastDoc);
+      setBlogs(prev => [...prev, ...result.posts]);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error al cargar más blogs:', error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -75,9 +102,8 @@ const Dashboard: React.FC = () => {
         alert('Blog creado exitosamente');
       }
       
-      invalidatePostsCache(); // Invalidar caché
       resetForm();
-      loadBlogs();
+      loadBlogs(); // Recargar blogs
       setActiveSection('list');
     } catch (error) {
       console.error('Error al guardar el blog:', error);
@@ -103,9 +129,8 @@ const Dashboard: React.FC = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este blog?')) {
       try {
         await deletePost(slug);
-        invalidatePostsCache(); // Invalidar caché
         alert('Blog eliminado exitosamente');
-        loadBlogs();
+        loadBlogs(); // Recargar blogs
       } catch (error) {
         console.error('Error al eliminar el blog:', error);
         alert('Error al eliminar el blog');
@@ -360,6 +385,26 @@ const Dashboard: React.FC = () => {
           {blogs.length === 0 && (
             <div className="text-center py-4">
               <p className="text-muted">No hay blogs disponibles</p>
+            </div>
+          )}
+          
+          {/* Botón Cargar más */}
+          {hasMore && blogs.length > 0 && (
+            <div className="text-center py-3 border-top">
+              <button 
+                className="btn btn-outline-primary"
+                onClick={loadMoreBlogs}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Cargando...
+                  </>
+                ) : (
+                  'Cargar más blogs'
+                )}
+              </button>
             </div>
           )}
         </div>

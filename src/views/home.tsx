@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import BlogList from '../components/BlogList';
 import BlogPostComponent from '../components/BlogPost';
-import { getAllPosts, getPostBySlug } from '../services/blogService';
+import { getPostsPaginated, getPostBySlug } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
 function Home() {
@@ -12,6 +12,10 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,9 +23,12 @@ function Home() {
     const loadPosts = async () => {
       setLoading(true);
       try {
-        const allPosts = await getAllPosts();
-        setPosts(allPosts);
-        setFilteredPosts(allPosts);
+        // Cargar primera página de posts
+        const result = await getPostsPaginated(9);
+        setPosts(result.posts);
+        setFilteredPosts(result.posts);
+        setLastDoc(result.lastDoc);
+        setHasMore(result.hasMore);
       } catch (error) {
         console.error('Error loading posts:', error);
       } finally {
@@ -30,6 +37,28 @@ function Home() {
     };
     loadPosts();
   }, []);
+
+  const loadMorePosts = async () => {
+    if (!hasMore || loadingMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const result = await getPostsPaginated(9, lastDoc);
+      const newPosts = [...posts, ...result.posts];
+      setPosts(newPosts);
+      setFilteredPosts(searchTerm ? newPosts.filter(post =>
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      ) : newPosts);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading more posts:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   // Sync view with route
   useEffect(() => {
@@ -215,7 +244,31 @@ function Home() {
               </div>
             </div>
           ) : (
-            <BlogList posts={filteredPosts} onPostClick={handlePostClick} />
+            <>
+              <BlogList posts={filteredPosts} onPostClick={handlePostClick} />
+              
+              {/* Botón Ver más */}
+              {hasMore && !searchTerm && (
+                <div className="container-fluid px-4 py-4">
+                  <div className="text-center">
+                    <button 
+                      className="btn btn-outline-danger btn-lg"
+                      onClick={loadMorePosts}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Cargando más...
+                        </>
+                      ) : (
+                        'Ver más cómics'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
