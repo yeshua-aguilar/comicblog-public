@@ -10,16 +10,23 @@ ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida 
 - **Búsqueda Inteligente**: Encuentra cómics rápidamente con la función de búsqueda.
 - **Panel de Administración**: Un dashboard completo para que los administradores gestionen las publicaciones.
 
-## Cómo Empezar
+## Estructura del Proyecto
 
-Para poner en marcha el proyecto en tu entorno local, sigue estos sencillos pasos.
+- **`src/`**: Código fuente de la aplicación.
+  - **`components/`**: Componentes de React reutilizables.
+  - **`views/`**: Vistas o páginas de la aplicación.
+  - **`services/`**: Lógica para interactuar con servicios externos como Firebase.
+  - **`assets/`**: Imágenes y hojas de estilo.
+- **`public/`**: Archivos públicos que no se procesan a través de Vite.
+
+## Cómo Empezar
 
 ### Prerrequisitos
 
-- **Node.js**: Asegúrate de tener Node.js instalado. Puedes descargarlo desde [nodejs.org](https://nodejs.org/).
-- **npm**: Generalmente se instala junto con Node.js.
+- **Node.js**: Descárgalo desde [nodejs.org](https://nodejs.org/).
+- **npm**: Se instala junto con Node.js.
 
-### Instalación
+### Instalación y Configuración
 
 1. **Clona el Repositorio**:
    ```bash
@@ -33,7 +40,10 @@ Para poner en marcha el proyecto en tu entorno local, sigue estos sencillos paso
    ```
 
 3. **Configura Firebase**:
-   - Crea un proyecto en [Firebase](https://firebase.google.com/).
+   - Regístrate en [Firebase](https://firebase.google.com/) si no tienes cuenta.
+   - Crea un nuevo proyecto en la consola de Firebase.
+   - En "Authentication", habilita el método de autenticación por correo electrónico y contraseña.
+   - En "Firestore Database", crea la base de datos en modo de prueba.
    - Ve a la configuración de tu proyecto y copia tus credenciales de Firebase.
    - Crea un archivo `.env` en la raíz del proyecto y añade tus credenciales:
      ```
@@ -45,21 +55,18 @@ Para poner en marcha el proyecto en tu entorno local, sigue estos sencillos paso
      VITE_FIREBASE_APP_ID=tu_app_id
      ```
 
+4. **Crea las colecciones necesarias en Firestore:**
+   - Ingresa a la sección "Firestore Database" en la consola de Firebase.
+   - Haz clic en "Iniciar colección" y crea una colección llamada `blogs` para almacenar las publicaciones de cómics. Cada documento representa un cómic y debe contener los campos: `title`, `author`, `date`, `tags`, `excerpt`, `image`, `content`, etc.
+   - Crea otra colección llamada `contenido`. Dentro de esta colección, crea un documento (por ejemplo, con el ID `xxxxxxxxxx`) que contendrá un campo `comics` (array de objetos cómic) usado como manifiesto para mostrar la lista de cómics en la app.
+   - Puedes añadir documentos de ejemplo para probar la funcionalidad y asegurarte de que los campos coincidan con los usados en el código.
+
 ### Scripts Disponibles
 
 - **`npm run dev`**: Inicia el servidor de desarrollo.
 - **`npm run build`**: Compila la aplicación para producción.
 - **`npm run lint`**: Analiza el código en busca de errores.
 - **`npm run preview`**: Previsualiza la compilación de producción.
-
-## Estructura del Proyecto
-
-- **`src/`**: Contiene el código fuente de la aplicación.
-  - **`components/`**: Componentes de React reutilizables.
-  - **`views/`**: Las diferentes vistas o páginas de la aplicación.
-  - **`services/`**: Lógica para interactuar con servicios externos como Firebase.
-  - **`assets/`**: Archivos estáticos como imágenes y hojas de estilo.
-- **`public/`**: Archivos públicos que no se procesan a través de Vite.
 
 ## Contribuciones
 
