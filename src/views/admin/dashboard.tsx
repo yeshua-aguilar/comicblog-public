@@ -27,7 +27,8 @@ const Dashboard: React.FC = () => {
     content: '',
     tags: '',
     excerpt: '',
-    slug: ''
+    slug: '',
+    comicPages: ''
   });
 
   useEffect(() => {
@@ -72,7 +73,8 @@ const Dashboard: React.FC = () => {
       tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
       excerpt: formData.excerpt,
       image: formData.image,
-      content: formData.content
+      content: formData.content,
+      comicPages: formData.comicPages
     };
 
     try {
@@ -106,7 +108,8 @@ const Dashboard: React.FC = () => {
       content: blog.content,
       tags: blog.tags.join(', '),
       excerpt: blog.excerpt,
-      slug: blog.slug
+      slug: blog.slug,
+      comicPages: blog.comicPages || ''
     });
     setActiveSection('create');
   };
@@ -134,7 +137,8 @@ const Dashboard: React.FC = () => {
       content: '',
       tags: '',
       excerpt: '',
-      slug: ''
+      slug: '',
+      comicPages: ''
     });
     setEditingBlog(null);
   };
@@ -291,16 +295,29 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="mb-3">
-              <label htmlFor="content" className="form-label">Contenido del Blog</label>
+              <label htmlFor="comicPages" className="form-label">URLs de Páginas del Cómic</label>
+              <textarea
+                className="form-control"
+                id="comicPages"
+                rows={5}
+                value={formData.comicPages}
+                onChange={(e) => setFormData({...formData, comicPages: e.target.value})}
+                placeholder="Ingresa las URLs de las páginas del cómic, una por línea:\nhttps://ejemplo.com/pagina1.jpg\nhttps://ejemplo.com/pagina2.jpg\nhttps://ejemplo.com/pagina3.jpg"
+              ></textarea>
+              <small className="text-muted">Ingresa una URL por línea. Estas imágenes se mostrarán en el contenido del cómic.</small>
+            </div>
+            
+            <div className="mb-3">
+              <label htmlFor="content" className="form-label">Contenido del Blog (Opcional)</label>
               <textarea
                 className="form-control"
                 id="content"
                 rows={10}
                 value={formData.content}
                 onChange={(e) => setFormData({...formData, content: e.target.value})}
-                placeholder="Escribe el contenido del blog en formato Markdown..."
-                required
+                placeholder="Escribe contenido adicional del blog (opcional)..."
               ></textarea>
+              <small className="text-muted">Este campo es opcional. Puedes agregar texto adicional, descripción o comentarios sobre el cómic.</small>
             </div>
             
             <div className="d-flex gap-2">

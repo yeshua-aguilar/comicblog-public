@@ -7,6 +7,7 @@ export interface BlogPost {
   excerpt: string;
   content: string;
   image?: string;
+  comicPages?: string;
 }
 
 export interface BlogPostMetadata {

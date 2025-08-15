@@ -74,29 +74,35 @@ const BlogList: FC<BlogListProps> = ({ posts, onPostClick }) => {
                   onClick={() => onPostClick(post.slug)}
                   style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden' }}
                 >
-                  {/* Imagen de portada o placeholder gris */}
+                  {/* Imagen de portada con dimensiones de cómic */}
                   {post.image ? (
                     <img 
                       src={post.image} 
                       className="card-img-top" 
                       alt={post.title}
-                      style={{height: '420px', objectFit: 'cover', width: '100%'}}
+                      style={{
+                        height: '480px', 
+                        objectFit: 'cover', 
+                        width: '100%',
+                        aspectRatio: '2/3'
+                      }}
                     />
                   ) : (
                     <div 
                       className="d-flex align-items-center justify-content-center text-muted"
                       style={{
-                        height: '420px',
+                        height: '480px',
                         backgroundColor: '#6c757d',
                         fontSize: '0.9rem',
-                        width: '100%'
+                        width: '100%',
+                        aspectRatio: '2/3'
                       }}
                     >
                       <div className="text-center">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" className="mb-2">
                           <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
                         </svg>
-                        <div>Sin imagen</div>
+                        <div>Sin portada</div>
                       </div>
                     </div>
                   )}

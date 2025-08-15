@@ -39,7 +39,8 @@ function toBlogPost(id: string, data: Record<string, any>): BlogPost {
     tags: normalizeTags(data.tags),
     excerpt: String(data.excerpt ?? data.descripcion ?? ''),
     image: String(data.image ?? data.portada ?? ''),
-    content: String(data.content ?? data.contenido ?? '')
+    content: String(data.content ?? data.contenido ?? ''),
+    comicPages: String(data.comicPages ?? '')
   };
 }
 
@@ -256,7 +257,8 @@ export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<stri
       tags: postData.tags,
       descripcion: postData.excerpt,
       portada: postData.image,
-      contenido: postData.content
+      contenido: postData.content,
+      comicPages: postData.comicPages
     };
 
     const docRef = await addDoc(postsRef, payload);
@@ -298,6 +300,9 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
     }
     if (postData.content !== undefined) {
       payload.contenido = postData.content;
+    }
+    if (postData.comicPages !== undefined) {
+      payload.comicPages = postData.comicPages;
     }
 
     await updateDoc(docRef, payload);
@@ -342,7 +347,8 @@ export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 
       tags: postData.tags,
       descripcion: postData.excerpt,
       portada: postData.image,
-      contenido: postData.content
+      contenido: postData.content,
+      comicPages: postData.comicPages
     };
 
     await setDoc(docRef, payload);

@@ -97,6 +97,79 @@
   }
 }
 
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Estilos para el carrusel de cómics */
+.comic-carousel {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.comic-carousel img {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.comic-carousel img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Áreas de navegación por clic */
+.comic-nav-area {
+  transition: background-color 0.2s ease;
+}
+
+.comic-nav-area:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.comic-nav-area:active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Mejoras responsivas */
+@media (max-width: 768px) {
+  .comic-carousel img {
+    max-height: 90vh !important;
+  }
+  
+  .comic-page-indicators {
+    gap: 0.5rem !important;
+  }
+  
+  .comic-page-indicators button {
+    width: 40px !important;
+    height: 35px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* En móviles, hacer las áreas de clic más grandes */
+  .comic-nav-area {
+    width: 40% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .comic-carousel img {
+    max-height: 85vh !important;
+  }
+  
+  .comic-page-indicators button {
+    width: 35px !important;
+    height: 30px !important;
+    font-size: 0.7rem !important;
+  }
+}
+
 .comic-card {
   animation: fadeIn 0.6s ease-out;
 }
