@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getGenresWithCounts } from '../services/blogService';
 import '../assets/css/genero.css';
 
+/**
+ * Componente para mostrar la página de géneros
+ * Permite explorar los cómics organizados por categorías/géneros
+ */
 function Genero() {
   const [genresWithCounts, setGenresWithCounts] = useState<{ genre: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -13,15 +17,8 @@ function Genero() {
     const loadGenres = async () => {
       setLoading(true);
       try {
-        // ✅ OPTIMIZADO: Solo procesa los tags, ignora el resto del contenido
-        // Beneficios de optimización:
-        // - Procesa solo el campo 'tags' en el cliente (ignora contenido, imágenes, etc.)
-        // - Incluye caché en memoria (5 min) para evitar llamadas repetidas
-        // - Procesa conteos en el cliente para mejor rendimiento
-        // - Se invalida automáticamente al crear/actualizar/eliminar posts
         const genres = await getGenresWithCounts();
         setGenresWithCounts(genres);
-        // Calcular total de posts basado en los conteos de géneros
         const total = genres.reduce((sum, { count }) => sum + count, 0);
         setTotalPosts(total);
       } catch (e) {
@@ -33,7 +30,6 @@ function Genero() {
     loadGenres();
   }, []);
 
-  // Improved Bootstrap color palette with gradients and better contrast
   const genreColors = [
     { bg: 'bg-primary', gradient: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', text: 'text-white' },
     { bg: 'bg-success', gradient: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)', text: 'text-white' },
@@ -48,6 +44,7 @@ function Genero() {
     { bg: 'bg-teal', gradient: 'linear-gradient(135deg, #20c997 0%, #1aa179 100%)', text: 'text-white' },
     { bg: 'bg-orange', gradient: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)', text: 'text-white' }
   ];
+  
   const getGenreColor = (i: number) => genreColors[i % genreColors.length];
 
   const goToGenre = (genre: string) => {
@@ -88,7 +85,6 @@ function Genero() {
             <h1 className="display-3 fw-bold mb-3 text-white">Explora por Géneros</h1>
             <p className="lead text-white-50 mb-4 mx-auto">
               Descubre doujins organizados por géneros.
-
             </p>
           </div>
         </div>
@@ -127,7 +123,6 @@ function Genero() {
                             e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
                           }}
                         >
-                          {/* Subtle pattern overlay */}
                           <div className="position-absolute w-100 h-100 genre-card-pattern"></div>
 
                           <div className="card-body d-flex flex-column justify-content-center text-center p-4 position-relative">
@@ -143,8 +138,6 @@ function Genero() {
                                 <span className="fw-semibold">{count} post{count !== 1 ? 's' : ''}</span>
                               </div>
                             </div>
-
-
                           </div>
                         </div>
                       </div>

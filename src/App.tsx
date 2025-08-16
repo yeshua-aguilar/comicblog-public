@@ -4,6 +4,7 @@ import Home from './views/home';
 import Genero from './views/genero';
 import AdminLogin from './views/admin/login';
 import Dashboard from './views/admin/dashboard';
+import ComicPost from './components/ComicPost';
 import { AuthProvider, RequireAuth } from './types/loginContexto';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/comics" element={<Home />} />
+            <Route path="/comics/:slug" element={<ComicPost />} />
             <Route path="/generos" element={<Genero />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />

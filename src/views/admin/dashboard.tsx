@@ -7,12 +7,18 @@ import { auth } from '../../services/firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Interfaz para las estadísticas del dashboard
+ */
 interface DashboardStats {
   totalBlogs: number;
   totalCategories: number;
   recentBlogs: number;
 }
 
+/**
+ * Componente Dashboard para administración de blogs
+ */
 const Dashboard: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'stats' | 'create' | 'list'>('stats');
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -35,14 +41,16 @@ const Dashboard: React.FC = () => {
     loadBlogs();
   }, []);
 
+  /**
+   * Carga la lista de blogs y calcula estadísticas
+   */
   const loadBlogs = async (reset: boolean = true) => {
     try {
       if (reset) {
-        // Cargar lista completa desde el manifiesto
         const comics = await getComicsList();
         setBlogs(comics);
         setHasMore(false);
-        // Estadísticas
+        
         const uniqueTags = new Set(comics.flatMap(blog => blog.tags));
         const recentDate = new Date();
         recentDate.setMonth(recentDate.getMonth() - 1);
@@ -58,11 +66,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Función placeholder para cargar más blogs (deshabilitada)
+   */
   const loadMoreBlogs = async () => {
-    // Deshabilitado: toda la lista se carga desde el manifiesto
     return;
   };
 
+  /**
+   * Maneja el envío del formulario para crear o actualizar un blog
+   */
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -91,7 +104,7 @@ const Dashboard: React.FC = () => {
       }
       
       resetForm();
-      loadBlogs(); // Recargar blogs
+      loadBlogs();
       setActiveSection('list');
     } catch (error) {
       console.error('Error al guardar el blog:', error);
@@ -99,6 +112,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Prepara el formulario para editar un blog existente
+   */
   const handleEditBlog = (blog: BlogPost) => {
     setEditingBlog(blog);
     setFormData({
@@ -114,12 +130,15 @@ const Dashboard: React.FC = () => {
     setActiveSection('create');
   };
 
+  /**
+   * Elimina un blog después de confirmación del usuario
+   */
   const handleDeleteBlog = async (slug: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este blog?')) {
       try {
         await deletePost(slug);
         alert('Blog eliminado exitosamente');
-        loadBlogs(); // Recargar blogs
+        loadBlogs();
       } catch (error) {
         console.error('Error al eliminar el blog:', error);
         alert('Error al eliminar el blog');
@@ -129,6 +148,9 @@ const Dashboard: React.FC = () => {
 
 
 
+  /**
+   * Resetea el formulario a su estado inicial
+   */
   const resetForm = () => {
     setFormData({
       title: '',
@@ -143,6 +165,9 @@ const Dashboard: React.FC = () => {
     setEditingBlog(null);
   };
 
+  /**
+   * Renderiza la sección de estadísticas
+   */
   const renderStats = () => (
     <div className="dashboard-content">
       <h2 className="mb-4">Estadísticas del Blog</h2>
@@ -211,6 +236,9 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  /**
+   * Renderiza el formulario de creación/edición de blogs
+   */
   const renderCreateForm = () => (
     <div className="dashboard-content">
       <h2 className="mb-4">{editingBlog ? 'Editar Blog' : 'Crear Nuevo Blog'}</h2>
@@ -336,6 +364,9 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  /**
+   * Renderiza la lista de blogs con opciones de edición y eliminación
+   */
   const renderBlogList = () => (
     <div className="dashboard-content">
       <h2 className="mb-4">Lista de Blogs</h2>
@@ -391,7 +422,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
           
-          {/* Botón Cargar más */}
           {hasMore && blogs.length > 0 && (
             <div className="text-center py-3 border-top">
               <button 
@@ -417,11 +447,17 @@ const Dashboard: React.FC = () => {
 
   const navigate = useNavigate();
 
+  /**
+   * Maneja el cierre de sesión del usuario
+   */
   const handleLogout = async () => {
     await signOut(auth);
     navigate('/');
   };
 
+  /**
+   * Navega a la página principal
+   */
   const handleGoHome = () => {
     navigate('/');
   };

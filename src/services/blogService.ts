@@ -5,10 +5,11 @@ import type { BlogPost } from '../types/blog';
 const POSTS_COLLECTION = 'blogs';
 const CONTENT_COLLECTION = 'contenido';
 const CONTENT_DOC_ID = 'xacHrp80QFdcaQZhehl4';
+const DEFAULT_PAGE_SIZE = 9;
 
-// Configuración de paginación
-const DEFAULT_PAGE_SIZE = 9; // Número de posts por página
-
+/**
+ * Normaliza los tags desde diferentes formatos a un array de strings
+ */
 function normalizeTags(raw: unknown): string[] {
   if (!raw) return [];
   if (Array.isArray(raw)) {
@@ -21,6 +22,9 @@ function normalizeTags(raw: unknown): string[] {
   return [];
 }
 
+/**
+ * Convierte datos de Firestore a formato BlogPost
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toBlogPost(id: string, data: Record<string, any>): BlogPost {
   let date: string = new Date().toISOString().slice(0, 10);
@@ -44,7 +48,9 @@ function toBlogPost(id: string, data: Record<string, any>): BlogPost {
   };
 }
 
-// Función paginada para obtener posts (OPTIMIZADA para Firebase)
+/**
+ * Obtiene posts de forma paginada desde Firestore
+ */
 export const getPostsPaginated = async (
   pageSize: number = DEFAULT_PAGE_SIZE,
   lastDoc?: QueryDocumentSnapshot
@@ -53,11 +59,10 @@ export const getPostsPaginated = async (
     const postsRef = collection(db, POSTS_COLLECTION);
     let q = query(
       postsRef,
-      orderBy('fecha', 'desc'), // Ordenar por fecha descendente
+      orderBy('fecha', 'desc'),
       limit(pageSize)
     );
 
-    // Si hay un documento anterior, continuar desde ahí
     if (lastDoc) {
       q = query(
         postsRef,
@@ -73,7 +78,7 @@ export const getPostsPaginated = async (
     const newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
     const hasMore = querySnapshot.docs.length === pageSize;
 
-    console.log(`Posts cargados: ${posts.length}, Hay más: ${hasMore}`);
+
     return { posts, lastDoc: newLastDoc, hasMore };
   } catch (error) {
     console.error('Error al obtener posts paginados:', error);
@@ -81,22 +86,19 @@ export const getPostsPaginated = async (
   }
 };
 
-// Cache para géneros (válido por 5 minutos)
+// Cache para géneros y cómics
 let genresCache: { data: { genre: string; count: number }[]; timestamp: number } | null = null;
-const GENRES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
-
-// Cache para la lista de cómics (manifiesto)
 let comicsListCache: { data: BlogPost[]; timestamp: number } | null = null;
-const COMICS_LIST_CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const GENRES_CACHE_DURATION = 5 * 60 * 1000;
+const COMICS_LIST_CACHE_DURATION = 5 * 60 * 1000;
 
-// Nueva función para obtener la lista de cómics desde un documento "manifiesto"
+/**
+ * Obtiene la lista de cómics desde el documento manifiesto
+ */
 export const getComicsList = async (): Promise<BlogPost[]> => {
   if (comicsListCache && (Date.now() - comicsListCache.timestamp) < COMICS_LIST_CACHE_DURATION) {
-    console.log('getComicsList: Devolviendo cómics desde caché');
     return comicsListCache.data;
   }
-
-  console.log('getComicsList: Obteniendo lista de cómics desde el manifiesto de contenido');
   try {
     const docRef = doc(db, CONTENT_COLLECTION, CONTENT_DOC_ID);
     const docSnap = await getDoc(docRef);
@@ -114,10 +116,8 @@ export const getComicsList = async (): Promise<BlogPost[]> => {
         timestamp: Date.now()
       };
       
-      console.log(`Total de cómics cargados desde manifiesto: ${posts.length}`);
       return posts;
     } else {
-      console.log('El documento de contenido no existe!');
       return [];
     }
   } catch (error) {
@@ -126,22 +126,20 @@ export const getComicsList = async (): Promise<BlogPost[]> => {
   }
 };
 
+/**
+ * Invalida el cache de la lista de cómics
+ */
 export const invalidateComicsListCache = (): void => {
   comicsListCache = null;
-  console.log('Cache de la lista de cómics invalidado');
 };
 
-
-// Función OPTIMIZADA para obtener solo los géneros/tags (sin contenido completo)
-// Esta función ahora usa el manifiesto de cómics para ser más eficiente
+/**
+ * Obtiene géneros con conteo desde el manifiesto de cómics
+ */
 export const getGenresWithCounts = async (): Promise<{ genre: string; count: number }[]> => {
-  // Verificar si hay datos en caché válidos
   if (genresCache && (Date.now() - genresCache.timestamp) < GENRES_CACHE_DURATION) {
-    console.log('getGenresWithCounts: Devolviendo géneros desde caché');
     return genresCache.data;
   }
-
-  console.log('getGenresWithCounts: Obteniendo cómics desde el manifiesto para contar géneros');
   try {
     const posts = await getComicsList(); 
 
@@ -158,13 +156,11 @@ export const getGenresWithCounts = async (): Promise<{ genre: string; count: num
       .map(([genre, count]) => ({ genre, count }))
       .sort((a, b) => b.count - a.count);
 
-    // Guardar en caché
     genresCache = {
       data: genresWithCounts,
       timestamp: Date.now()
     };
 
-    console.log(`Géneros procesados desde manifiesto: ${genresWithCounts.length}`);
     return genresWithCounts;
   } catch (error) {
     console.error('Error al obtener géneros desde el manifiesto:', error);
@@ -172,16 +168,17 @@ export const getGenresWithCounts = async (): Promise<{ genre: string; count: num
   }
 };
 
-// Función para invalidar el caché de géneros (llamar cuando se creen/actualicen/eliminen posts)
+/**
+ * Invalida el cache de géneros
+ */
 export const invalidateGenresCache = (): void => {
   genresCache = null;
-  console.log('Cache de géneros invalidado');
 };
 
-// Función para obtener TODOS los posts (SOLO para casos específicos como genero.tsx)
-// ⚠️ ADVERTENCIA: Esta función lee TODOS los documentos y puede ser costosa
+/**
+ * Obtiene todos los posts desde Firestore (uso limitado por costo)
+ */
 export const getAllPosts = async (): Promise<BlogPost[]> => {
-  console.log('⚠️ getAllPosts: Esta función lee TODOS los documentos y puede ser costosa');
   try {
     const postsRef = collection(db, POSTS_COLLECTION);
     const querySnapshot = await getDocs(postsRef);
@@ -189,7 +186,6 @@ export const getAllPosts = async (): Promise<BlogPost[]> => {
     const posts: BlogPost[] = querySnapshot.docs.map(d => toBlogPost(d.id, d.data()));
     posts.sort((a, b) => b.date.localeCompare(a.date));
 
-    console.log(`Total de posts cargados desde Firestore: ${posts.length}`);
     return posts;
   } catch (error) {
     console.error('Error al obtener posts desde Firestore:', error);
@@ -198,7 +194,6 @@ export const getAllPosts = async (): Promise<BlogPost[]> => {
 };
 
 export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
-  console.log(`getPostBySlug: Obteniendo post "${slug}" desde Firestore`);
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
     const docSnap = await getDoc(docRef);
@@ -206,7 +201,6 @@ export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
     if (docSnap.exists()) {
       return toBlogPost(docSnap.id, docSnap.data());
     } else {
-      console.log('El documento no existe!');
       return null;
     }
   } catch (error) {
@@ -216,7 +210,6 @@ export const getPostBySlug = async (slug: string): Promise<BlogPost | null> => {
 };
 
 export const getPostsByTag = async (tag: string): Promise<BlogPost[]> => {
-  console.log(`getPostsByTag: Buscando posts con el tag "${tag}" en Firestore`);
   try {
     const postsRef = collection(db, POSTS_COLLECTION);
     const q = query(postsRef, where('tags', 'array-contains', tag));
@@ -232,25 +225,27 @@ export const getPostsByTag = async (tag: string): Promise<BlogPost[]> => {
   }
 };
 
-// Actualiza el manifiesto de cómics en Firestore
+/**
+ * Actualiza el manifiesto de cómics en Firestore
+ */
 const updateComicsManifest = async (): Promise<void> => {
   try {
     const posts = await getAllPosts();
     const docRef = doc(db, CONTENT_COLLECTION, CONTENT_DOC_ID);
     await updateDoc(docRef, { comics: posts });
     invalidateComicsListCache();
-    console.log('Manifiesto de cómics actualizado en Firestore');
   } catch (error) {
     console.error('Error al actualizar el manifiesto de cómics:', error);
   }
 };
 
-// Función para crear un nuevo post (escribe campos en inglés y español para compatibilidad)
+/**
+ * Crea un nuevo post en Firestore
+ */
 export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<string | null> => {
   try {
     const postsRef = collection(db, POSTS_COLLECTION);
     const payload: Partial<BlogPost> & Record<string, unknown> = {
-      // en español (compatibilidad con documentos existentes)
       titulo: postData.title,
       autor: postData.author,
       fecha: postData.date,
@@ -265,7 +260,6 @@ export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<stri
     invalidateGenresCache();
     invalidateComicsListCache();
     await updateComicsManifest();
-    console.log('Post created with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Error creating post:', error);
@@ -273,7 +267,9 @@ export const createPost = async (postData: Omit<BlogPost, 'slug'>): Promise<stri
   }
 };
 
-// Función para actualizar un post existente (sincroniza claves en ambos idiomas)
+/**
+ * Actualiza un post existente en Firestore
+ */
 export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 'slug'>>): Promise<boolean> => {
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
@@ -311,7 +307,6 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
     }
     invalidateComicsListCache();
     await updateComicsManifest();
-    console.log('Post updated successfully');
     return true;
   } catch (error) {
     console.error('Error updating post:', error);
@@ -319,7 +314,9 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
   }
 };
 
-// Función para eliminar un post
+/**
+ * Elimina un post de Firestore
+ */
 export const deletePost = async (slug: string): Promise<boolean> => {
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
@@ -327,7 +324,6 @@ export const deletePost = async (slug: string): Promise<boolean> => {
     invalidateGenresCache();
     invalidateComicsListCache();
     await updateComicsManifest();
-    console.log('Post deleted successfully');
     return true;
   } catch (error) {
     console.error('Error deleting post:', error);
@@ -335,7 +331,9 @@ export const deletePost = async (slug: string): Promise<boolean> => {
   }
 };
 
-// Función para crear un nuevo post con un slug (ID) personalizado
+/**
+ * Crea un nuevo post con un slug personalizado
+ */
 export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 'slug'>): Promise<boolean> => {
   try {
     const docRef = doc(db, POSTS_COLLECTION, slug);
@@ -355,7 +353,6 @@ export const createPostWithSlug = async (slug: string, postData: Omit<BlogPost, 
     invalidateGenresCache();
     invalidateComicsListCache();
     await updateComicsManifest();
-    console.log('Post created with custom slug:', slug);
     return true;
   } catch (error) {
     console.error('Error creating post with slug:', error);

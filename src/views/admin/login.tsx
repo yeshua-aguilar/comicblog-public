@@ -5,6 +5,9 @@ import type { AuthError } from 'firebase/auth';
 import { auth } from '../../services/firebase';
 import '../../assets/css/login.css';
 
+/**
+ * Componente de login para administradores
+ */
 function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +17,9 @@ function AdminLogin() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  /**
+   * Maneja el envío del formulario de login
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -26,24 +32,20 @@ function AdminLogin() {
     try {
       setSubmitting(true);
       
-      // Autenticación con Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
       console.log('Usuario autenticado:', user);
       
-      // Guardar token si "Recuérdame" está marcado
       if (remember) {
         localStorage.setItem('rememberUser', 'true');
       }
       
-      // Redirigir al panel de administración
-      navigate('/admin/dashboard'); // Ajusta la ruta según tu aplicación
+      navigate('/admin/dashboard');
       
     } catch (error) {
       const authError = error as AuthError;
       
-      // Manejar diferentes tipos de errores de Firebase
       switch (authError.code) {
         case 'auth/user-not-found':
           setError('No existe una cuenta con este correo electrónico.');

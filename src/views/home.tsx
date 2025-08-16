@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import BlogList from '../components/BlogList';
-import BlogPostComponent from '../components/BlogPost';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import Contenido from './contenido';
 import { getComicsList, getPostBySlug } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
+/**
+ * Componente principal de la página de inicio
+ * Maneja múltiples vistas: home, blog y post individual
+ */
 function Home() {
   const [currentView, setCurrentView] = useState<'home' | 'blog' | 'post'>('home');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
@@ -16,16 +19,18 @@ function Home() {
   const [loadingMore] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams();
 
   useEffect(() => {
     const loadPosts = async () => {
+      if (slug) return;
+      
       setLoading(true);
       try {
-        // OPTIMIZADO: Cargar lista de cómics desde el manifiesto
         const comics = await getComicsList();
         setPosts(comics);
         setFilteredPosts(comics);
-        setHasMore(false); // No paginación con manifiesto
+        setHasMore(false);
       } catch (error) {
         console.error('Error loading comics:', error);
       } finally {
@@ -33,24 +38,68 @@ function Home() {
       }
     };
     loadPosts();
-  });
-
-  const loadMorePosts = async () => {
-    // OPTIMIZADO: No hay paginación con manifiesto
-    return;
-  };
-
-  // Sync view with route
+  }, [slug]);
+  
   useEffect(() => {
-    if (location.pathname.startsWith('/comics')) {
-      setCurrentView('blog');
-      const params = new URLSearchParams(location.search);
-      const genre = params.get('genre');
-      if (genre) setSearchTerm(genre);
-    } else {
-      setCurrentView('home');
-    }
-  }, [location.pathname, location.search]);
+    const handleRouteChange = async () => {
+      if (slug) {
+        setLoading(true);
+        try {
+          const post = await getPostBySlug(slug);
+          if (post) {
+            setSelectedPost(post);
+            setCurrentView('post');
+          } else {
+            navigate('/comics');
+          }
+        } catch (error) {
+          console.error('Error loading post:', error);
+          navigate('/comics');
+        } finally {
+          setLoading(false);
+        }
+      } else if (location.pathname.startsWith('/comics')) {
+        setCurrentView('blog');
+        setSelectedPost(null);
+        if (posts.length === 0) {
+          setLoading(true);
+          try {
+            const comics = await getComicsList();
+            setPosts(comics);
+            setFilteredPosts(comics);
+            setHasMore(false);
+          } catch (error) {
+            console.error('Error loading comics:', error);
+          } finally {
+            setLoading(false);
+          }
+        }
+        const params = new URLSearchParams(location.search);
+        const genre = params.get('genre');
+        const search = params.get('search');
+        if (genre) setSearchTerm(genre);
+        if (search) setSearchTerm(search);
+      } else {
+        setCurrentView('home');
+        setSelectedPost(null);
+        if (posts.length === 0) {
+          setLoading(true);
+          try {
+            const comics = await getComicsList();
+            setPosts(comics);
+            setFilteredPosts(comics);
+            setHasMore(false);
+          } catch (error) {
+            console.error('Error loading comics:', error);
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    };
+
+    handleRouteChange();
+  }, [location.pathname, location.search, slug, navigate, posts.length]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -65,36 +114,18 @@ function Home() {
     }
   }, [searchTerm, posts]);
 
-  // Get unique genres/tags from all posts
-  const getUniqueGenres = () => {
-    const allTags = posts.flatMap(post => post.tags);
-    return [...new Set(allTags)];
-  };
-
   const handleBlogClick = () => {
     setCurrentView('blog');
     navigate('/comics');
   };
 
-  const handleGenreClick = (genre: string) => {
-    setSearchTerm(genre);
-    setCurrentView('blog');
-    navigate(`/comics?genre=${encodeURIComponent(genre)}`);
+  const loadMorePosts = async () => {
+    // Función placeholder para futura implementación de paginación
   };
 
-  const handlePostClick = async (slug: string) => {
-    setLoading(true);
-    try {
-      const post = await getPostBySlug(slug);
-      if (post) {
-        setSelectedPost(post);
-        setCurrentView('post');
-      }
-    } catch (error) {
-      console.error('Error loading post:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handlePostClick = async (postSlug: string) => {
+    // Navegar a la URL específica del post
+    navigate(`/comics/${postSlug}`);
   };
 
   const handleBackToBlog = () => {
@@ -122,192 +153,60 @@ function Home() {
     navigate('/comics');
   };
 
-  if (currentView === 'blog') {
-    return (
-      <div className="bg-dark text-white">
-        {/* Header */}
-        <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-          <div className="container-fluid">
-            <Link className="navbar-brand fw-bold text-danger fs-2" to="/" onClick={handleBackToHome}>
-              ComicFlix
-            </Link>
-            <button 
-              className="navbar-toggler" 
-              type="button" 
-              data-bs-toggle="collapse" 
-              data-bs-target="#navbarNav"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav me-auto">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/" onClick={handleBackToHome}>Inicio</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link active" to="/comics" onClick={handleBlogClick}>Cómics</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/generos">Géneros</Link>
-                </li>
-                <li className="nav-item dropdown d-none">
-                  <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Géneros
-                  </a>
-                  <ul className="dropdown-menu bg-dark border-secondary">
-                    {getUniqueGenres().map((genre, index) => (
-                      <li key={index}>
-                        <a className="dropdown-item text-light hover-bg-danger" href="#" onClick={() => handleGenreClick(genre)}>
-                          {genre}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              </ul>
-              <form className="d-flex position-relative" onSubmit={handleSearchSubmit}>
-                <div className="input-group">
-                  <input 
-                    className="form-control bg-dark text-white border-secondary focus-ring-light" 
-                    type="search" 
-                    placeholder="Buscar en el blog..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ borderRight: 'none' }}
-                  />
-                  {searchTerm && (
-                    <button 
-                      type="button"
-                      className="btn btn-dark border-secondary"
-                      onClick={clearSearch}
-                      style={{ borderLeft: 'none', borderRight: 'none' }}
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button 
-                    className="btn btn-outline-danger border-secondary d-flex align-items-center justify-content-center" 
-                    type="submit"
-                    style={{ borderLeft: 'none' }}
-                    aria-label="Buscar"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-                    </svg>
-                    <span className="visually-hidden">Buscar</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </nav>
-
-        <div style={{marginTop: '76px'}}>
-          {/* Search Results Info */}
-          {searchTerm && (
-            <div className="container-fluid px-4 pt-3">
-              <div className="alert alert-info bg-dark border-secondary text-light">
-                <small>
-                  {filteredPosts.length > 0 
-                    ? `${filteredPosts.length} resultado(s) para "${searchTerm}"`
-                    : `No se encontraron resultados para "${searchTerm}"`
-                  }
-                </small>
-              </div>
-            </div>
-          )}
-          
-          {loading ? (
-            <div className="d-flex justify-content-center align-items-center" style={{minHeight: '400px'}}>
-              <div className="spinner-border text-danger" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <BlogList posts={filteredPosts} onPostClick={handlePostClick} />
-              
-              {/* Botón Ver más */}
-              {hasMore && !searchTerm && (
-                <div className="container-fluid px-4 py-4">
-                  <div className="text-center">
-                    <button 
-                      className="btn btn-outline-danger btn-lg"
-                      onClick={loadMorePosts}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Cargando más...
-                        </>
-                      ) : (
-                        'Ver más cómics'
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <footer className="bg-black text-center py-4 mt-5">
-          <div className="container">
-            <p className="text-white mb-0">
-              © 2025 ComicFlix. Todos los derechos reservados.
-            </p>
-          </div>
-        </footer>
+  const SearchBar = ({ placeholder }: { placeholder: string }) => (
+    <form className="d-flex position-relative" onSubmit={handleSearchSubmit}>
+      <div className="input-group">
+        <input 
+          className="form-control bg-dark text-white border-secondary" 
+          type="search" 
+          placeholder={placeholder}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ borderRight: 'none' }}
+        />
+        {searchTerm && (
+          <button 
+            type="button"
+            className="btn btn-dark border-secondary"
+            onClick={clearSearch}
+            style={{ borderLeft: 'none', borderRight: 'none' }}
+          >
+            ✕
+          </button>
+        )}
+        <button 
+          className="btn btn-outline-danger border-secondary d-flex align-items-center justify-content-center" 
+          type="submit"
+          style={{ borderLeft: 'none' }}
+          aria-label="Buscar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+          </svg>
+          <span className="visually-hidden">Buscar</span>
+        </button>
       </div>
-    );
-  }
+    </form>
+  );
 
-  if (currentView === 'post' && selectedPost) {
+  if (currentView === 'blog' || currentView === 'post') {
     return (
-      <div className="bg-dark text-white">
-        {/* Header */}
-        <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-          <div className="container-fluid">
-            <Link className="navbar-brand fw-bold text-danger fs-2" to="/" onClick={handleBackToHome}>
-              ComicFlix
-            </Link>
-            <button 
-              className="navbar-toggler" 
-              type="button" 
-              data-bs-toggle="collapse" 
-              data-bs-target="#navbarNav"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav me-auto">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/" onClick={handleBackToHome}>Inicio</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link active" to="/comics" onClick={handleBlogClick}>Cómics</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/generos">Géneros</Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </nav>
+      <Contenido
+        currentView={currentView}
+        selectedPost={selectedPost}
 
-        <BlogPostComponent post={selectedPost} onBackClick={handleBackToBlog} />
-
-        {/* Footer */}
-        <footer className="bg-black text-center py-4 mt-5">
-          <div className="container">
-            <p className="text-white mb-0">
-              © 2025 ComicFlix. Todos los derechos reservados.
-            </p>
-          </div>
-        </footer>
-      </div>
+        filteredPosts={filteredPosts}
+        loading={loading}
+        searchTerm={searchTerm}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onPostClick={handlePostClick}
+        onBackToBlog={handleBackToBlog}
+        onBackToHome={handleBackToHome}
+        onBlogClick={handleBlogClick}
+        onLoadMorePosts={loadMorePosts}
+        SearchBar={SearchBar}
+      />
     );
   }
 
@@ -339,39 +238,7 @@ function Home() {
                 <Link className="nav-link" to="/generos">Géneros</Link>
               </li>
             </ul>
-            <form className="d-flex position-relative" onSubmit={handleSearchSubmit}>
-              <div className="input-group">
-                <input 
-                  className="form-control bg-dark text-white border-secondary" 
-                  type="search" 
-                  placeholder="Buscar cómics..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ borderRight: 'none' }}
-                />
-                {searchTerm && (
-                  <button 
-                    type="button"
-                    className="btn btn-dark border-secondary"
-                    onClick={clearSearch}
-                    style={{ borderLeft: 'none', borderRight: 'none' }}
-                  >
-                    ✕
-                  </button>
-                )}
-                <button 
-                  className="btn btn-outline-danger border-secondary d-flex align-items-center justify-content-center" 
-                  type="submit"
-                  style={{ borderLeft: 'none' }}
-                  aria-label="Buscar"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-                  </svg>
-                  <span className="visually-hidden">Buscar</span>
-                </button>
-              </div>
-            </form>
+            <SearchBar placeholder="Buscar cómics..." />
           </div>
         </div>
       </nav>

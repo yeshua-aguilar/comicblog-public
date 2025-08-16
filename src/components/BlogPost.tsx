@@ -1,13 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { BlogPost } from '../types/blog';
 
+/**
+ * Props para el componente BlogPost
+ */
 interface BlogPostProps {
   post: BlogPost;
   onBackClick: () => void;
 }
 
+/**
+ * Componente para mostrar un post de blog completo con carrusel de imágenes del cómic
+ */
 const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -24,7 +30,9 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
-  // Obtener las URLs de las páginas del cómic
+  /**
+   * Extrae y procesa las URLs de las páginas del cómic desde el campo comicPages
+   */
   const getComicPageUrls = () => {
     if (!post.comicPages || !post.comicPages.trim()) return [];
     return post.comicPages
@@ -35,20 +43,20 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
   
   const comicPageUrls = getComicPageUrls();
   
-  // Funciones para navegar en el carrusel
-  const nextImage = () => {
+  // Funciones de navegación del carrusel optimizadas con useCallback
+  const nextImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev + 1) % comicPageUrls.length);
-  };
+  }, [comicPageUrls.length]);
   
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev - 1 + comicPageUrls.length) % comicPageUrls.length);
-  };
+  }, [comicPageUrls.length]);
   
   const goToImage = (index: number) => {
     setCurrentImageIndex(index);
   };
 
-  // Manejo de gestos táctiles
+  // Configuración para gestos táctiles
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -75,7 +83,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
     }
   };
 
-  // Navegación con teclado
+  // Configurar navegación con teclado
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (comicPageUrls.length <= 1) return;
@@ -89,7 +97,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [comicPageUrls.length]);
+  }, [comicPageUrls.length, nextImage, prevImage]);
 
   return (
     <div className="container-fluid px-4 py-4" style={{ marginTop: '76px' }}>
@@ -124,7 +132,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
             </div>
           </div>
           
-          {/* Imagen de portada más grande */}
+          {/* Imagen de portada */}
           <div className="mb-4" style={{
             width: '100vw',
             marginLeft: 'calc(-50vw + 50%)',
@@ -138,9 +146,9 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 alt={post.title}
                 style={{
                   maxWidth: '100%',
-                  width: 'min(800px, 95vw)',  // Aumentado de 600px a 800px y de 90vw a 95vw
-                  height: 'auto',             
-                  aspectRatio: '2/3',         
+                  width: 'min(800px, 95vw)',
+                  height: 'auto',
+                  aspectRatio: '2/3',
                   objectFit: 'cover',
                   boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
                 }}
@@ -150,8 +158,8 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 className="bg-dark rounded d-flex align-items-center justify-content-center text-muted"
                 style={{
                   maxWidth: '100%',
-                  width: 'min(800px, 95vw)',  // Aumentado de 600px a 800px y de 90vw a 95vw
-                  aspectRatio: '2/3',         
+                  width: 'min(800px, 95vw)',
+                  aspectRatio: '2/3',
                   backgroundColor: '#6c757d',
                   fontSize: '1.2rem',
                   boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
@@ -188,13 +196,13 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                   className="img-fluid rounded"
                   style={{
                     maxWidth: '100%',
-                    width: 'min(800px, 95vw)',  // Mismo tamaño que la portada
-                    height: 'auto',             // Altura automática para mantener proporciones
-                    aspectRatio: '2/3',         // Misma proporción que la portada
-                    objectFit: 'cover',         // Mismo objectFit que la portada
+                    width: 'min(800px, 95vw)',
+                    height: 'auto',
+                    aspectRatio: '2/3',
+                    objectFit: 'cover',
                     transition: 'opacity 0.3s ease-in-out',
                     userSelect: 'none',
-                    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'  // Misma sombra que la portada
+                    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
                   }}
                   draggable={false}
                 />
@@ -231,7 +239,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 )}
               </div>
               
-              {/* Indicadores de página mejorados */}
+              {/* Indicadores de página */}
               {comicPageUrls.length > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <div className="d-flex flex-wrap justify-content-center gap-2 comic-page-indicators" style={{ maxWidth: '90%' }}>
@@ -257,7 +265,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 </div>
               )}
               
-              {/* Contador de páginas mejorado */}
+              {/* Contador de páginas */}
               <div className="text-center mt-3">
                 <div className="d-inline-flex align-items-center bg-dark bg-opacity-75 px-3 py-2 rounded-pill">
                   <small className="text-light fw-bold">
