@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
 import BlogList from '../components/BlogList';
 import BlogPostComponent from '../components/BlogPost';
+import Header from '../components/Header';
 import type { BlogPost } from '../types/blog';
 
 /**
@@ -16,7 +16,6 @@ interface ContenidoProps {
   loadingMore: boolean;
   onPostClick: (postSlug: string) => void;
   onBackToBlog: () => void;
-  onBackToHome: () => void;
   onBlogClick: () => void;
   onLoadMorePosts: () => void;
   SearchBar: React.ComponentType<{ placeholder: string }>;
@@ -37,7 +36,6 @@ function Contenido({
   loadingMore,
   onPostClick,
   onBackToBlog,
-  onBackToHome,
   onBlogClick,
   onLoadMorePosts,
   SearchBar
@@ -45,35 +43,7 @@ function Contenido({
   if (currentView === 'blog') {
     return (
       <div className="bg-dark text-white">
-        <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-          <div className="container-fluid">
-            <Link className="navbar-brand fw-bold text-danger fs-2" to="/" onClick={onBackToHome}>
-              ComicFlix
-            </Link>
-            <button 
-              className="navbar-toggler" 
-              type="button" 
-              data-bs-toggle="collapse" 
-              data-bs-target="#navbarNav"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav me-auto">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/" onClick={onBackToHome}>Inicio</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link active" to="/comics" onClick={onBlogClick}>Cómics</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/generos">Géneros</Link>
-                </li>
-              </ul>
-              <SearchBar placeholder="Buscar en el blog..." />
-            </div>
-          </div>
-        </nav>
+        <Header onBlogClick={onBlogClick} SearchBar={SearchBar} />
 
         <div style={{marginTop: '76px'}}>
           {searchTerm && (
@@ -137,35 +107,7 @@ function Contenido({
   if (currentView === 'post' && selectedPost) {
     return (
       <div className="bg-dark text-white">
-        {/* Header */}
-        <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-          <div className="container-fluid">
-            <Link className="navbar-brand fw-bold text-danger fs-2" to="/" onClick={onBackToHome}>
-              ComicFlix
-            </Link>
-            <button 
-              className="navbar-toggler" 
-              type="button" 
-              data-bs-toggle="collapse" 
-              data-bs-target="#navbarNav"
-            >
-              <span className="navbar-toggler-icon"></span>
-            </button>
-            <div className="collapse navbar-collapse" id="navbarNav">
-              <ul className="navbar-nav me-auto">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/" onClick={onBackToHome}>Inicio</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link active" to="/comics" onClick={onBlogClick}>Cómics</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/generos">Géneros</Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </nav>
+        <Header onBlogClick={onBlogClick} SearchBar={SearchBar} />
 
         <BlogPostComponent post={selectedPost} onBackClick={onBackToBlog} />
 

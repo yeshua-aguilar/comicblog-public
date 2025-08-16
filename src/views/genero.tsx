@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getGenresWithCounts } from '../services/blogService';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getGenresWithCounts, searchComics } from '../services/blogService';
+import Header from '../components/Header';
+import SearchBar from '../components/SearchBar';
 import '../assets/css/genero.css';
 
 /**
@@ -11,6 +13,7 @@ function Genero() {
   const [genresWithCounts, setGenresWithCounts] = useState<{ genre: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,32 +54,50 @@ function Genero() {
     navigate(`/comics?genre=${encodeURIComponent(genre)}`);
   };
 
+  const handleBlogClick = () => {
+    navigate('/comics');
+  };
+
+  const handleSearchSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      try {
+        // Usar la nueva función de búsqueda optimizada
+        await searchComics(searchTerm.trim());
+        navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
+      } catch (error) {
+        console.error('Error searching comics:', error);
+        navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
+      }
+    } else {
+      navigate('/comics');
+    }
+  }, [searchTerm, navigate]);
+
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    navigate('/comics');
+  }, [navigate]);
+
+  const handleSearchTermChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  // SearchBar personalizado para el Header
+  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
+    <SearchBar 
+      placeholder={placeholder}
+      searchTerm={searchTerm}
+      onSearchTermChange={handleSearchTermChange}
+      onSubmit={handleSearchSubmit}
+      onClear={clearSearch}
+    />
+  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
+
   return (
     <div className="bg-dark text-white min-vh-100">
-      {/* Header */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-        <div className="container-fluid">
-          <Link className="navbar-brand fw-bold text-danger fs-2" to="/">
-            ComicFlix
-          </Link>
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav me-auto">
-              <li className="nav-item">
-                <Link className="nav-link" to="/">Inicio</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/comics">Cómics</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link active" to="/generos">Géneros</Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
+      {/* Header componente */}
+      <Header onBlogClick={handleBlogClick} SearchBar={CustomSearchBar} />
 
       {/* Hero */}
       <div className="hero-section position-relative">

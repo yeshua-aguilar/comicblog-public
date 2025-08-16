@@ -276,30 +276,50 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: Record<string, any> = {};
 
-    if (postData.title !== undefined) {
-      payload.titulo = postData.title;
-    }
-    if (postData.author !== undefined) {
-      payload.autor = postData.author;
-    }
-    if (postData.date !== undefined) {
-      payload.fecha = postData.date;
-    }
-    if (postData.tags !== undefined) {
-      payload.tags = postData.tags;
-    }
-    if (postData.excerpt !== undefined) {
-      payload.descripcion = postData.excerpt;
-    }
-    if (postData.image !== undefined) {
-      payload.portada = postData.image;
-    }
-    if (postData.content !== undefined) {
-      payload.contenido = postData.content;
-    }
-    if (postData.comicPages !== undefined) {
-      payload.comicPages = postData.comicPages;
-    }
+    Object.keys(postData).forEach(key => {
+      switch (key) {
+        case 'title':
+          if (postData.title !== undefined) {
+            payload.titulo = postData.title;
+          }
+          break;
+        case 'author':
+          if (postData.author !== undefined) {
+            payload.autor = postData.author;
+          }
+          break;
+        case 'date':
+          if (postData.date !== undefined) {
+            payload.fecha = postData.date;
+          }
+          break;
+        case 'tags':
+          if (postData.tags !== undefined) {
+            payload.tags = postData.tags;
+          }
+          break;
+        case 'excerpt':
+          if (postData.excerpt !== undefined) {
+            payload.descripcion = postData.excerpt;
+          }
+          break;
+        case 'image':
+          if (postData.image !== undefined) {
+            payload.portada = postData.image;
+          }
+          break;
+        case 'content':
+          if (postData.content !== undefined) {
+            payload.contenido = postData.content;
+          }
+          break;
+        case 'comicPages':
+          if (postData.comicPages !== undefined) {
+            payload.comicPages = postData.comicPages;
+          }
+          break;
+      }
+    });
 
     await updateDoc(docRef, payload);
     if (postData.tags !== undefined) {
@@ -311,6 +331,153 @@ export const updatePost = async (slug: string, postData: Partial<Omit<BlogPost, 
   } catch (error) {
     console.error('Error updating post:', error);
     return false;
+  }
+};
+
+/**
+ * Busca comics de manera eficiente usando múltiples criterios
+ * @param searchTerm - Término de búsqueda
+ * @param maxResults - Número máximo de resultados (default: 20)
+ * @returns Array de BlogPost que coinciden con la búsqueda
+ */
+export const searchComics = async (searchTerm: string, maxResults: number = 20): Promise<BlogPost[]> => {
+  if (!searchTerm || searchTerm.trim().length < 2) {
+    return [];
+  }
+
+  try {
+    const searchTermLower = searchTerm.toLowerCase().trim();
+    const searchWords = searchTermLower.split(' ').filter(word => word.length > 1);
+    
+    // Obtener todos los comics (usando caché si está disponible)
+    const allComics = await getComicsList();
+    
+    // Función de puntuación para relevancia
+    const calculateRelevance = (post: BlogPost): number => {
+      let score = 0;
+      const titleLower = post.title.toLowerCase();
+      const excerptLower = post.excerpt.toLowerCase();
+      const tagsLower = post.tags.map(tag => tag.toLowerCase());
+      const authorLower = post.author.toLowerCase();
+      
+      // Coincidencia exacta en título (puntuación más alta)
+      if (titleLower.includes(searchTermLower)) {
+        score += 100;
+      }
+      
+      // Coincidencia en palabras individuales del título
+      searchWords.forEach(word => {
+        if (titleLower.includes(word)) {
+          score += 50;
+        }
+      });
+      
+      // Coincidencia en tags
+      tagsLower.forEach(tag => {
+        if (tag.includes(searchTermLower)) {
+          score += 75;
+        }
+        searchWords.forEach(word => {
+          if (tag.includes(word)) {
+            score += 25;
+          }
+        });
+      });
+      
+      // Coincidencia en excerpt
+      if (excerptLower.includes(searchTermLower)) {
+        score += 30;
+      }
+      searchWords.forEach(word => {
+        if (excerptLower.includes(word)) {
+          score += 15;
+        }
+      });
+      
+      // Coincidencia en autor
+      if (authorLower.includes(searchTermLower)) {
+        score += 20;
+      }
+      
+      return score;
+    };
+    
+    // Filtrar y puntuar resultados
+    const scoredResults = allComics
+      .map(post => ({ post, score: calculateRelevance(post) }))
+      .filter(result => result.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxResults)
+      .map(result => result.post);
+    
+    return scoredResults;
+  } catch (error) {
+    console.error('Error searching comics:', error);
+    return [];
+  }
+};
+
+/**
+ * Busca comics por tag específico de manera optimizada
+ * @param tag - Tag a buscar
+ * @returns Array de BlogPost que contienen el tag
+ */
+export const searchComicsByTag = async (tag: string): Promise<BlogPost[]> => {
+  if (!tag || tag.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const tagLower = tag.toLowerCase().trim();
+    const allComics = await getComicsList();
+    
+    return allComics.filter(post => 
+      post.tags.some(postTag => postTag.toLowerCase().includes(tagLower))
+    );
+  } catch (error) {
+    console.error('Error searching comics by tag:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene sugerencias de búsqueda basadas en títulos y tags existentes
+ * @param partialTerm - Término parcial para sugerencias
+ * @param maxSuggestions - Número máximo de sugerencias (default: 5)
+ * @returns Array de strings con sugerencias
+ */
+export const getSearchSuggestions = async (partialTerm: string, maxSuggestions: number = 5): Promise<string[]> => {
+  if (!partialTerm || partialTerm.trim().length < 2) {
+    return [];
+  }
+
+  try {
+    const termLower = partialTerm.toLowerCase().trim();
+    const allComics = await getComicsList();
+    const suggestions = new Set<string>();
+    
+    // Buscar en títulos
+    allComics.forEach(post => {
+      const titleLower = post.title.toLowerCase();
+      if (titleLower.includes(termLower)) {
+        suggestions.add(post.title);
+      }
+    });
+    
+    // Buscar en tags
+    allComics.forEach(post => {
+      post.tags.forEach(tag => {
+        const tagLower = tag.toLowerCase();
+        if (tagLower.includes(termLower)) {
+          suggestions.add(tag);
+        }
+      });
+    });
+    
+    return Array.from(suggestions).slice(0, maxSuggestions);
+  } catch (error) {
+    console.error('Error getting search suggestions:', error);
+    return [];
   }
 };
 

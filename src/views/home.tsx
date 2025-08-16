@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Contenido from './contenido';
-import { getComicsList, getPostBySlug } from '../services/blogService';
+import Header from '../components/Header';
+import SearchBar from '../components/SearchBar';
+import { getComicsList, getPostBySlug, searchComics } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
 /**
@@ -134,67 +136,52 @@ function Home() {
     navigate('/comics');
   };
 
-  const handleBackToHome = () => {
-    setSelectedPost(null);
-    setCurrentView('home');
-    navigate('/');
-  };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+
+  const handleSearchSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentView !== 'blog') {
-      setCurrentView('blog');
+    if (searchTerm.trim()) {
+      setLoading(true);
+      try {
+        const searchResults = await searchComics(searchTerm.trim());
+        setFilteredPosts(searchResults);
+        if (currentView !== 'blog') {
+          setCurrentView('blog');
+        }
+        navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
+      } catch (error) {
+        console.error('Error searching comics:', error);
+        setFilteredPosts([]);
+      } finally {
+        setLoading(false);
+      }
     }
-    navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
-  };
+  }, [currentView, navigate, searchTerm, setCurrentView, setFilteredPosts, setLoading]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchTerm('');
     navigate('/comics');
-  };
+  }, [navigate]);
 
-  const SearchBar = ({ placeholder }: { placeholder: string }) => (
-    <form className="d-flex position-relative" onSubmit={handleSearchSubmit}>
-      <div className="input-group">
-        <input 
-          className="form-control bg-dark text-white border-secondary" 
-          type="search" 
-          placeholder={placeholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ borderRight: 'none' }}
-        />
-        {searchTerm && (
-          <button 
-            type="button"
-            className="btn btn-dark border-secondary"
-            onClick={clearSearch}
-            style={{ borderLeft: 'none', borderRight: 'none' }}
-          >
-            ✕
-          </button>
-        )}
-        <button 
-          className="btn btn-outline-danger border-secondary d-flex align-items-center justify-content-center" 
-          type="submit"
-          style={{ borderLeft: 'none' }}
-          aria-label="Buscar"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-          </svg>
-          <span className="visually-hidden">Buscar</span>
-        </button>
-      </div>
-    </form>
-  );
+  const handleSearchTermChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
+    <SearchBar
+      placeholder={placeholder}
+      searchTerm={searchTerm}
+      onSearchTermChange={handleSearchTermChange}
+      onSubmit={handleSearchSubmit}
+      onClear={clearSearch}
+    />
+  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
 
   if (currentView === 'blog' || currentView === 'post') {
     return (
       <Contenido
         currentView={currentView}
         selectedPost={selectedPost}
-
         filteredPosts={filteredPosts}
         loading={loading}
         searchTerm={searchTerm}
@@ -202,46 +189,17 @@ function Home() {
         loadingMore={loadingMore}
         onPostClick={handlePostClick}
         onBackToBlog={handleBackToBlog}
-        onBackToHome={handleBackToHome}
         onBlogClick={handleBlogClick}
         onLoadMorePosts={loadMorePosts}
-        SearchBar={SearchBar}
+        SearchBar={CustomSearchBar}
       />
     );
   }
 
   return (
     <div className="bg-dark text-white">
-      {/* Header tipo Netflix */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
-        <div className="container-fluid">
-          <Link className="navbar-brand fw-bold text-danger fs-2" to="/">
-            ComicFlix
-          </Link>
-          <button 
-            className="navbar-toggler" 
-            type="button" 
-            data-bs-toggle="collapse" 
-            data-bs-target="#navbarNav"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav me-auto">
-              <li className="nav-item">
-                <Link className="nav-link active" to="/">Inicio</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/comics" onClick={handleBlogClick}>Cómics</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/generos">Géneros</Link>
-              </li>
-            </ul>
-            <SearchBar placeholder="Buscar cómics..." />
-          </div>
-        </div>
-      </nav>
+      {/* Header componente */}
+      <Header onBlogClick={handleBlogClick} SearchBar={CustomSearchBar} />
 
       {/* Hero Section tipo Netflix */}
       <div className="hero-section position-relative" style={{marginTop: '76px'}}>

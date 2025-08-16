@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Contenido from '../views/contenido';
-import { getPostBySlug, getComicsList } from '../services/blogService';
+import SearchBar from './SearchBar';
+import { getPostBySlug, getComicsList, searchComics } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
 /**
@@ -78,9 +79,7 @@ function ComicPost() {
     navigate('/comics');
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
-  };
+
 
   const handleBlogClick = () => {
     navigate('/comics');
@@ -90,51 +89,41 @@ function ComicPost() {
     // Función placeholder para futura implementación de paginación
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
-  };
+    if (searchTerm.trim()) {
+      try {
+        // Usar la nueva función de búsqueda optimizada
+        await searchComics(searchTerm.trim());
+        navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
+      } catch (error) {
+        console.error('Error searching comics:', error);
+        navigate(`/comics?search=${encodeURIComponent(searchTerm)}`);
+      }
+    } else {
+      navigate('/comics');
+    }
+  }, [navigate, searchTerm]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchTerm('');
     navigate('/comics');
-  };
+  }, [navigate]);
 
-  const SearchBar = ({ placeholder }: { placeholder: string }) => (
-    <form className="d-flex position-relative" onSubmit={handleSearchSubmit}>
-      <div className="input-group">
-        <input 
-          className="form-control bg-dark text-white border-secondary" 
-          type="search" 
-          placeholder={placeholder}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ borderRight: 'none' }}
-        />
-        {searchTerm && (
-          <button 
-            type="button"
-            className="btn btn-dark border-secondary"
-            onClick={clearSearch}
-            style={{ borderLeft: 'none', borderRight: 'none' }}
-          >
-            ✕
-          </button>
-        )}
-        <button 
-          className="btn btn-outline-danger border-secondary d-flex align-items-center justify-content-center" 
-          type="submit"
-          style={{ borderLeft: 'none' }}
-          aria-label="Buscar"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-          </svg>
-          <span className="visually-hidden">Buscar</span>
-        </button>
-      </div>
-    </form>
-  );
+  const handleSearchTermChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  // SearchBar personalizado para el Header
+  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
+    <SearchBar 
+      placeholder={placeholder}
+      searchTerm={searchTerm}
+      onSearchTermChange={handleSearchTermChange}
+      onSubmit={handleSearchSubmit}
+      onClear={clearSearch}
+    />
+  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
 
   if (loading) {
     return (
@@ -157,10 +146,9 @@ function ComicPost() {
       loadingMore={false}
       onPostClick={handlePostClick}
       onBackToBlog={handleBackToBlog}
-      onBackToHome={handleBackToHome}
       onBlogClick={handleBlogClick}
       onLoadMorePosts={loadMorePosts}
-      SearchBar={SearchBar}
+      SearchBar={CustomSearchBar}
     />
   );
 }
