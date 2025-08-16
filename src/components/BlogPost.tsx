@@ -125,15 +125,22 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
           </div>
           
           {/* Imagen de portada más grande */}
-          <div className="d-flex justify-content-center mb-4">
+          <div className="mb-4" style={{
+            width: '100vw',
+            marginLeft: 'calc(-50vw + 50%)',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
             {post.image ? (
               <img 
                 src={post.image} 
                 className="rounded" 
                 alt={post.title}
                 style={{
-                  width: '400px',
-                  height: '600px',
+                  maxWidth: '100%',
+                  width: 'min(800px, 95vw)',  // Aumentado de 600px a 800px y de 90vw a 95vw
+                  height: 'auto',             
+                  aspectRatio: '2/3',         
                   objectFit: 'cover',
                   boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
                 }}
@@ -142,8 +149,9 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
               <div 
                 className="bg-dark rounded d-flex align-items-center justify-content-center text-muted"
                 style={{
-                  width: '400px',
-                  height: '600px',
+                  maxWidth: '100%',
+                  width: 'min(800px, 95vw)',  // Aumentado de 600px a 800px y de 90vw a 95vw
+                  aspectRatio: '2/3',         
                   backgroundColor: '#6c757d',
                   fontSize: '1.2rem',
                   boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
@@ -164,7 +172,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
             <div className="mb-4 comic-carousel">
               <div 
                 ref={carouselRef}
-                className="position-relative"
+                className="position-relative d-flex justify-content-center"
                 style={{ 
                   width: '100vw',
                   marginLeft: 'calc(-50vw + 50%)',
@@ -177,15 +185,16 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 <img 
                   src={comicPageUrls[currentImageIndex]} 
                   alt={`Página ${currentImageIndex + 1}`}
-                  className="img-fluid"
+                  className="img-fluid rounded"
                   style={{
-                    width: '100%',
-                    height: 'auto',
-                    maxHeight: '95vh',
-                    objectFit: 'contain',
-                    backgroundColor: '#000',
+                    maxWidth: '100%',
+                    width: 'min(800px, 95vw)',  // Mismo tamaño que la portada
+                    height: 'auto',             // Altura automática para mantener proporciones
+                    aspectRatio: '2/3',         // Misma proporción que la portada
+                    objectFit: 'cover',         // Mismo objectFit que la portada
                     transition: 'opacity 0.3s ease-in-out',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'  // Misma sombra que la portada
                   }}
                   draggable={false}
                 />
@@ -195,7 +204,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                   <>
                     {/* Área izquierda para retroceder */}
                     <div 
-                      className="position-absolute top-0 start-0 h-100 comic-nav-area"
+                      className="position-absolute top-0 start-0 h-100"
                       style={{
                         width: '50%',
                         cursor: 'pointer',
@@ -208,7 +217,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                     
                     {/* Área derecha para avanzar */}
                     <div 
-                      className="position-absolute top-0 end-0 h-100 comic-nav-area"
+                      className="position-absolute top-0 end-0 h-100"
                       style={{
                         width: '50%',
                         cursor: 'pointer',
@@ -229,34 +238,19 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                     {comicPageUrls.map((_, index) => (
                       <button
                         key={index}
-                        className={`btn position-relative overflow-hidden ${
+                        className={`btn ${
                           index === currentImageIndex 
-                            ? 'btn-danger shadow-lg' 
+                            ? 'btn-danger' 
                             : 'btn-outline-light'
                         }`}
                         onClick={() => goToImage(index)}
                         style={{ 
                           width: '50px', 
                           height: '40px', 
-                          fontSize: '0.9rem',
-                          fontWeight: index === currentImageIndex ? 'bold' : 'normal',
-                          border: index === currentImageIndex ? '2px solid #dc3545' : '1px solid #6c757d',
-                          transition: 'all 0.3s ease',
-                          transform: index === currentImageIndex ? 'scale(1.1)' : 'scale(1)'
+                          fontSize: '0.9rem'
                         }}
                       >
                         {index + 1}
-                        {index === currentImageIndex && (
-                          <div 
-                            className="position-absolute bottom-0 start-0"
-                            style={{
-                              width: '100%',
-                              height: '3px',
-                              backgroundColor: '#fff',
-                              animation: 'pulse 2s infinite'
-                            }}
-                          />
-                        )}
                       </button>
                     ))}
                   </div>
