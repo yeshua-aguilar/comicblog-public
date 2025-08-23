@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getGenresWithCounts, searchComics } from '../services/blogService';
 import Header from '../components/Header';
-import SearchBar from '../components/SearchBar';
 import '../assets/css/genero.css';
 
 /**
@@ -83,21 +82,16 @@ function Genero() {
     setSearchTerm(value);
   }, []);
 
-  // SearchBar personalizado para el Header
-  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
-    <SearchBar 
-      placeholder={placeholder}
-      searchTerm={searchTerm}
-      onSearchTermChange={handleSearchTermChange}
-      onSubmit={handleSearchSubmit}
-      onClear={clearSearch}
-    />
-  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
 
   return (
     <div className="bg-dark text-white min-vh-100">
       {/* Header componente */}
-      <Header onBlogClick={handleBlogClick} SearchBar={CustomSearchBar} />
+      <Header onBlogClick={handleBlogClick} searchBarProps={{
+        searchTerm: searchTerm,
+        onSearchTermChange: handleSearchTermChange,
+        onSubmit: handleSearchSubmit,
+        onClear: clearSearch
+      }} />
 
       {/* Hero */}
       <div className="hero-section position-relative">

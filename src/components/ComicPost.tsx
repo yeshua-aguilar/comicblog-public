@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Contenido from '../views/contenido';
-import SearchBar from './SearchBar';
 import { getPostBySlug, getComicsList, searchComics } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
@@ -114,16 +113,7 @@ function ComicPost() {
     setSearchTerm(value);
   }, []);
 
-  // SearchBar personalizado para el Header
-  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
-    <SearchBar 
-      placeholder={placeholder}
-      searchTerm={searchTerm}
-      onSearchTermChange={handleSearchTermChange}
-      onSubmit={handleSearchSubmit}
-      onClear={clearSearch}
-    />
-  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
+
 
   if (loading) {
     return (
@@ -148,7 +138,12 @@ function ComicPost() {
       onBackToBlog={handleBackToBlog}
       onBlogClick={handleBlogClick}
       onLoadMorePosts={loadMorePosts}
-      SearchBar={CustomSearchBar}
+      searchBarProps={{
+        searchTerm: searchTerm,
+        onSearchTermChange: handleSearchTermChange,
+        onSubmit: handleSearchSubmit,
+        onClear: clearSearch
+      }}
     />
   );
 }
