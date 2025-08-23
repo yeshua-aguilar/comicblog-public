@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
+import SearchBar from './SearchBar';
+import type { SearchBarProps } from './SearchBar';
 
 interface HeaderProps {
   onBlogClick: () => void;
-  SearchBar: React.ComponentType<{ placeholder: string }>;
+  searchBarProps: Omit<SearchBarProps, 'placeholder'>;
 }
 
 /**
  * Componente Header reutilizable tipo Netflix
  * Contiene la navegación principal y la barra de búsqueda
  */
-function Header({ onBlogClick, SearchBar }: HeaderProps) {
+function Header({ onBlogClick, searchBarProps }: HeaderProps) {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
       <div className="container-fluid">
@@ -36,7 +38,7 @@ function Header({ onBlogClick, SearchBar }: HeaderProps) {
               <Link className="nav-link" to="/generos">Géneros</Link>
             </li>
           </ul>
-          <SearchBar placeholder="Buscar cómics..." />
+          <SearchBar placeholder="Buscar cómics..." {...searchBarProps} />
         </div>
       </div>
     </nav>

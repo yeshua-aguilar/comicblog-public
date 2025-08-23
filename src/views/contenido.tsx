@@ -2,6 +2,7 @@ import BlogList from '../components/BlogList';
 import BlogPostComponent from '../components/BlogPost';
 import Header from '../components/Header';
 import type { BlogPost } from '../types/blog';
+import type { SearchBarProps } from '../components/SearchBar';
 
 /**
  * Props para el componente Contenido
@@ -18,7 +19,7 @@ interface ContenidoProps {
   onBackToBlog: () => void;
   onBlogClick: () => void;
   onLoadMorePosts: () => void;
-  SearchBar: React.ComponentType<{ placeholder: string }>;
+  searchBarProps: Omit<SearchBarProps, 'placeholder'>;
 }
 
 /**
@@ -38,12 +39,12 @@ function Contenido({
   onBackToBlog,
   onBlogClick,
   onLoadMorePosts,
-  SearchBar
+  searchBarProps
 }: ContenidoProps) {
   if (currentView === 'blog') {
     return (
       <div className="bg-dark text-white">
-        <Header onBlogClick={onBlogClick} SearchBar={SearchBar} />
+        <Header onBlogClick={onBlogClick} searchBarProps={searchBarProps} />
 
         <div style={{marginTop: '76px'}}>
           {searchTerm && (
@@ -107,7 +108,7 @@ function Contenido({
   if (currentView === 'post' && selectedPost) {
     return (
       <div className="bg-dark text-white">
-        <Header onBlogClick={onBlogClick} SearchBar={SearchBar} />
+        <Header onBlogClick={onBlogClick} searchBarProps={searchBarProps} />
 
         <BlogPostComponent post={selectedPost} onBackClick={onBackToBlog} />
 

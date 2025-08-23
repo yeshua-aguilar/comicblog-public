@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Contenido from './contenido';
 import Header from '../components/Header';
-import SearchBar from '../components/SearchBar';
 import { getComicsList, getPostBySlug, searchComics } from '../services/blogService';
 import type { BlogPost } from '../types/blog';
 
@@ -156,7 +155,7 @@ function Home() {
         setLoading(false);
       }
     }
-  }, [currentView, navigate, searchTerm, setCurrentView, setFilteredPosts, setLoading]);
+  }, [currentView, navigate, searchTerm]);
 
   const clearSearch = useCallback(() => {
     setSearchTerm('');
@@ -167,15 +166,12 @@ function Home() {
     setSearchTerm(value);
   }, []);
 
-  const CustomSearchBar = useCallback(({ placeholder }: { placeholder: string }) => (
-    <SearchBar
-      placeholder={placeholder}
-      searchTerm={searchTerm}
-      onSearchTermChange={handleSearchTermChange}
-      onSubmit={handleSearchSubmit}
-      onClear={clearSearch}
-    />
-  ), [searchTerm, handleSearchTermChange, handleSearchSubmit, clearSearch]);
+  const searchBarProps = {
+    searchTerm,
+    onSearchTermChange: handleSearchTermChange,
+    onSubmit: handleSearchSubmit,
+    onClear: clearSearch,
+  };
 
   if (currentView === 'blog' || currentView === 'post') {
     return (
@@ -191,7 +187,7 @@ function Home() {
         onBackToBlog={handleBackToBlog}
         onBlogClick={handleBlogClick}
         onLoadMorePosts={loadMorePosts}
-        SearchBar={CustomSearchBar}
+        searchBarProps={searchBarProps}
       />
     );
   }
@@ -199,7 +195,7 @@ function Home() {
   return (
     <div className="bg-dark text-white">
       {/* Header componente */}
-      <Header onBlogClick={handleBlogClick} SearchBar={CustomSearchBar} />
+      <Header onBlogClick={handleBlogClick} searchBarProps={searchBarProps} />
 
       {/* Hero Section tipo Netflix */}
       <div className="hero-section position-relative" style={{marginTop: '76px'}}>

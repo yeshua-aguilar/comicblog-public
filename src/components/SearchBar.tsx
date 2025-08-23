@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import './SearchBar.css';
+import '../assets/css/SearchBar.css';
 
-interface SearchBarProps {
+export interface SearchBarProps {
   placeholder: string;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
@@ -34,6 +34,7 @@ const SearchBar: React.FC<SearchBarProps> = memo(({
           placeholder={placeholder}
           value={searchTerm}
           onChange={handleInputChange}
+          autoComplete="off" // Desactivar autocompletado por si acaso
         />
         {searchTerm && (
           <button 
