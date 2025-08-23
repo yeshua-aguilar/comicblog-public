@@ -99,7 +99,7 @@ function Genero() {
           <div className="hero-content">
             <h1 className="display-3 fw-bold mb-3 text-white">Explora por Géneros</h1>
             <p className="lead text-white-50 mb-4 mx-auto">
-              Descubre doujins organizados por géneros.
+              Descubre Comics organizados por géneros.
             </p>
           </div>
         </div>
