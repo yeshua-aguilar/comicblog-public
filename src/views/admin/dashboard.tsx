@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { getComicsList, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
 import type { BlogPost } from '../../types/blog';
 import '../../assets/css/dashboard.css';
@@ -93,14 +94,14 @@ const Dashboard: React.FC = () => {
     try {
       if (editingBlog) {
         await updatePost(editingBlog.slug, postData);
-        alert('Blog actualizado exitosamente');
+        Swal.fire('Éxito', 'Blog actualizado exitosamente', 'success');
       } else {
         if (formData.slug.trim()) {
           await createPostWithSlug(formData.slug.trim(), postData);
         } else {
           await createPost(postData);
         }
-        alert('Blog creado exitosamente');
+        Swal.fire('Éxito', 'Blog creado exitosamente', 'success');
       }
       
       resetForm();
@@ -108,7 +109,7 @@ const Dashboard: React.FC = () => {
       setActiveSection('list');
     } catch (error) {
       console.error('Error al guardar el blog:', error);
-      alert('Error al guardar el blog');
+      Swal.fire('Error', 'Error al guardar el blog', 'error');
     }
   };
 
@@ -137,11 +138,11 @@ const Dashboard: React.FC = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este blog?')) {
       try {
         await deletePost(slug);
-        alert('Blog eliminado exitosamente');
+        Swal.fire('Éxito', 'Blog eliminado exitosamente', 'success');
         loadBlogs();
       } catch (error) {
         console.error('Error al eliminar el blog:', error);
-        alert('Error al eliminar el blog');
+        Swal.fire('Error', 'Error al eliminar el blog', 'error');
       }
     }
   };

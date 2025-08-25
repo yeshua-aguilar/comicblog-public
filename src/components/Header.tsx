@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import type { SearchBarProps } from './SearchBar';
+import { useAuth } from '../types/useAuth';
 
 interface HeaderProps {
   onBlogClick: () => void;
@@ -12,6 +13,7 @@ interface HeaderProps {
  * Contiene la navegación principal y la barra de búsqueda
  */
 function Header({ onBlogClick, searchBarProps }: HeaderProps) {
+  const { user } = useAuth();
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-black fixed-top">
       <div className="container-fluid">
@@ -39,10 +41,17 @@ function Header({ onBlogClick, searchBarProps }: HeaderProps) {
             </li>
           </ul>
           <SearchBar placeholder="Buscar cómics..." {...searchBarProps} />
+          {user && (
+            <Link to="/admin/dashboard" className="btn btn-outline-light ms-2">
+              ⚙️
+            </Link>
+          )}
         </div>
       </div>
     </nav>
   );
 }
+
+
 
 export default Header;
