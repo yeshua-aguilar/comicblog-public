@@ -213,7 +213,7 @@ function Home() {
             paddingLeft: '4rem'
           }}
         >
-          <div className="hero-content" style={{maxWidth: '500px'}}>
+          <div className="hero-content" style={{maxWidth: '80%'}}>
             {loading ? (
               <div className="d-flex justify-content-center align-items-center w-100 h-100">
                 <div className="spinner-border text-light" role="status" style={{width: '3rem', height: '3rem'}}>
@@ -222,7 +222,11 @@ function Home() {
               </div>
             ) : posts.length > 0 ? (
               <>
-                <h1 className="display-4 fw-bold mb-3 text-shadow">{posts[0].title}</h1>
+                <h1 className="display-4 fw-bold mb-3 text-shadow">
+                  {posts[0].title.length > 60
+                    ? posts[0].title.slice(0, 60) + '...'
+                    : posts[0].title}
+                </h1>
                 <div className="mb-3">
                   <span className="badge bg-success me-2 px-3 py-2">
                     <i className="fas fa-star me-1"></i>Destacado
@@ -285,7 +289,8 @@ function Home() {
               </div>
             ) : (
               <div className="row">
-                {posts.slice(0, 3).map((post) => (
+                {/* aqui es para mostrar cuantos comics en la pagina principal */}
+                {posts.slice(0, 12).map((post) => (
                   <div key={post.slug} className="col-lg-3 col-md-4 col-sm-6 mb-4">
                     <div 
                       className="card bg-dark border-0 h-100 blog-card shadow"

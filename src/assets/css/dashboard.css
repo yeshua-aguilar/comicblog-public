@@ -579,3 +579,9 @@ small.text-muted {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+.badge-sm {
+  font-size: 0.75em; /* Smaller font size */
+  padding: 0.2em 0.5em; /* Adjust padding */
+  border-radius: 0.25rem; /* Maintain rounded corners */
+}

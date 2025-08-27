@@ -25,8 +25,8 @@ const Dashboard: React.FC = () => {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ totalBlogs: 0, totalCategories: 0, recentBlogs: 0 });
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [blogsPerPage] = useState(5); // Número de blogs por página
   const [formData, setFormData] = useState({
     title: '',
     author: '',
@@ -45,34 +45,28 @@ const Dashboard: React.FC = () => {
   /**
    * Carga la lista de blogs y calcula estadísticas
    */
-  const loadBlogs = async (reset: boolean = true) => {
+  const loadBlogs = async () => {
     try {
-      if (reset) {
-        const comics = await getComicsList();
-        setBlogs(comics);
-        setHasMore(false);
-        
-        const uniqueTags = new Set(comics.flatMap(blog => blog.tags));
-        const recentDate = new Date();
-        recentDate.setMonth(recentDate.getMonth() - 1);
-        const recentBlogs = comics.filter(blog => new Date(blog.date) > recentDate);
-        setStats({
-          totalBlogs: comics.length,
-          totalCategories: uniqueTags.size,
-          recentBlogs: recentBlogs.length
-        });
-      }
-    } catch (error) {
-      console.error('Error al cargar blogs:', error);
-    }
-  };
+      const comics = await getComicsList();
+      setBlogs(comics);
+      
+      const uniqueTags = new Set(comics.flatMap(blog => blog.tags));
+      const recentDate = new Date();
+      recentDate.setMonth(recentDate.getMonth() - 1);
+      const recentBlogs = comics.filter(blog => new Date(blog.date) > recentDate);
+      setStats({
+           totalBlogs: comics.length,
+           totalCategories: uniqueTags.size,
+           recentBlogs: recentBlogs.length
+         });
+     } catch (error) {
+       console.error('Error al cargar blogs:', error);
+     }
+   };
+ 
+   /**
 
-  /**
-   * Función placeholder para cargar más blogs (deshabilitada)
-   */
-  const loadMoreBlogs = async () => {
-    return;
-  };
+
 
   /**
    * Maneja el envío del formulario para crear o actualizar un blog
@@ -368,83 +362,94 @@ const Dashboard: React.FC = () => {
   /**
    * Renderiza la lista de blogs con opciones de edición y eliminación
    */
-  const renderBlogList = () => (
-    <div className="dashboard-content">
-      <h2 className="mb-4">Lista de Blogs</h2>
-      <div className="card">
-        <div className="card-header">
-          <h5>Todos los Blogs</h5>
-        </div>
-        <div className="card-body">
-          {blogs.map((blog) => (
-            <div key={blog.slug} className="border-bottom py-3">
-              <div className="row align-items-center">
-                <div className="col-lg-4 col-md-4 col-12 mb-2 mb-md-0">
-                  <h6 className="mb-1">{blog.title}</h6>
-                  <small className="text-muted">{blog.excerpt}</small>
-                </div>
-                <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
-                  <small className="text-muted">Por {blog.author}</small>
-                </div>
-                <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
-                  <small className="text-muted">{new Date(blog.date).toLocaleDateString()}</small>
-                </div>
-                <div className="col-lg-2 col-md-2 col-12 mb-2 mb-lg-0">
-                  <div className="d-flex flex-wrap gap-1">
-                    {blog.tags.map((tag, index) => (
-                      <span key={index} className="badge bg-danger">
-                        {tag}
-                      </span>
-                    ))}
+  const renderBlogList = () => {
+    // Lógica de paginación
+    const indexOfLastBlog = currentPage * blogsPerPage;
+    const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
+    const currentBlogs = blogs.slice(indexOfFirstBlog, indexOfLastBlog);
+    const totalPages = Math.ceil(blogs.length / blogsPerPage);
+
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+    return (
+      <div className="dashboard-content">
+        <h2 className="mb-4">Lista de Blogs</h2>
+        <div className="card">
+          <div className="card-header">
+            <h5>Todos los Blogs</h5>
+          </div>
+          <div className="card-body">
+            {currentBlogs.map((blog) => (
+              <div key={blog.slug} className="border-bottom py-3">
+                <div className="row align-items-center">
+                  <div className="col-lg-4 col-md-4 col-12 mb-2 mb-md-0">
+                    <h6 className="mb-1">{blog.title}</h6>
+                    <small className="text-muted">{blog.excerpt}</small>
+                  </div>
+                  <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
+                    <small className="text-muted">Por {blog.author}</small>
+                  </div>
+                  <div className="col-lg-2 col-md-2 col-6 mb-2 mb-lg-0">
+                    <small className="text-muted">{new Date(blog.date).toLocaleDateString()}</small>
+                  </div>
+                  <div className="col-lg-2 col-md-2 col-12 mb-2 mb-lg-0">
+                    <div className="d-flex flex-wrap gap-1">
+                      {blog.tags.slice(0, 3).map((tag, index) => (
+                        <span key={index} className="badge bg-danger badge-sm">
+                          {tag}
+                        </span>
+                      ))}
+                      {blog.tags.length > 3 && (
+                        <span className="badge bg-danger badge-sm">
+                          ...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="col-lg-2 col-md-2 col-12 d-flex justify-content-end gap-1 mt-2 mt-lg-0">
+                    <button
+                        className="btn btn-sm btn-outline-warning"
+                        onClick={() => handleEditBlog(blog)}
+                        title="Editar blog"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDeleteBlog(blog.slug)}
+                        title="Eliminar blog"
+                      >
+                        🗑️
+                      </button>
                   </div>
                 </div>
-                <div className="col-lg-2 col-md-2 col-12 d-flex justify-content-end gap-1 mt-2 mt-lg-0">
-                   <button
-                      className="btn btn-sm btn-outline-warning"
-                      onClick={() => handleEditBlog(blog)}
-                      title="Editar blog"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDeleteBlog(blog.slug)}
-                      title="Eliminar blog"
-                    >
-                      🗑️
-                    </button>
-                 </div>
               </div>
-            </div>
-          ))}
-          {blogs.length === 0 && (
-            <div className="text-center py-4">
-              <p className="text-muted">No hay blogs disponibles</p>
-            </div>
-          )}
-          
-          {hasMore && blogs.length > 0 && (
-            <div className="text-center py-3 border-top">
-              <button 
-                className="btn btn-outline-primary"
-                onClick={loadMoreBlogs}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Cargando...
-                  </>
-                ) : (
-                  'Cargar más blogs'
-                )}
-              </button>
-            </div>
-          )}
+            ))}
+            {currentBlogs.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-muted">No hay blogs disponibles</p>
+              </div>
+            )}
+            
+            {/* Controles de paginación */}
+            {blogs.length > blogsPerPage && (
+              <nav>
+                <ul className="pagination justify-content-center mt-3">
+                  {[...Array(totalPages)].map((_, index) => (
+                    <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                      <button onClick={() => paginate(index + 1)} className="page-link">
+                        {index + 1}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const navigate = useNavigate();
 
