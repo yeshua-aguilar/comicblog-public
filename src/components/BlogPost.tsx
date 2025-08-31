@@ -56,6 +56,49 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
     setCurrentImageIndex(index);
   };
 
+  const getPaginationItems = () => {
+    const totalPages = comicPageUrls.length;
+    const currentPage = currentImageIndex;
+    const pageNeighbours = 1;
+    const totalNumbers = pageNeighbours * 2 + 3;
+    const totalBlocks = totalNumbers + 2;
+
+    if (totalPages <= totalBlocks) {
+      return Array.from({ length: totalPages }, (_, i) => i);
+    }
+
+    const pages: (number | string)[] = [];
+
+    const startPage = Math.max(0, currentPage - pageNeighbours);
+    const endPage = Math.min(totalPages - 1, currentPage + pageNeighbours);
+
+    pages.push(0);
+
+    if (startPage > 1) {
+      pages.push('...');
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      if (i > 0 && i < totalPages - 1 && !pages.includes(i)) {
+        pages.push(i);
+      }
+    }
+
+    if (endPage < totalPages - 2) {
+      if (!pages.includes('...')) {
+        pages.push('...');
+      }
+    }
+    
+    if (!pages.includes(totalPages - 1)) {
+        pages.push(totalPages - 1);
+    }
+
+    return pages;
+  };
+
+  const paginationItems = comicPageUrls.length > 1 ? getPaginationItems() : [];
+
   // Configuración para gestos táctiles
   const minSwipeDistance = 50;
 
@@ -148,8 +191,7 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                   maxWidth: '100%',
                   width: 'min(800px, 95vw)',
                   height: 'auto',
-                  aspectRatio: '2/3',
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
                 }}
               />
@@ -190,77 +232,137 @@ const BlogPostComponent: React.FC<BlogPostProps> = ({ post, onBackClick }) => {
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
               >
-                <img 
-                  src={comicPageUrls[currentImageIndex]} 
-                  alt={`Página ${currentImageIndex + 1}`}
-                  className="img-fluid rounded"
-                  style={{
-                    maxWidth: '100%',
-                    width: 'min(800px, 95vw)',
-                    height: 'auto',
-                    aspectRatio: '2/3',
-                    objectFit: 'cover',
-                    transition: 'opacity 0.3s ease-in-out',
-                    userSelect: 'none',
-                    boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
-                  }}
-                  draggable={false}
-                />
-                
-                {/* Áreas de clic invisibles para navegación */}
-                {comicPageUrls.length > 1 && (
-                  <>
-                    {/* Área izquierda para retroceder */}
-                    <div 
-                      className="position-absolute top-0 start-0 h-100"
-                      style={{
-                        width: '50%',
-                        cursor: 'pointer',
-                        zIndex: 10,
-                        backgroundColor: 'transparent'
-                      }}
-                      onClick={prevImage}
-                      title="Página anterior"
-                    />
-                    
-                    {/* Área derecha para avanzar */}
-                    <div 
-                      className="position-absolute top-0 end-0 h-100"
-                      style={{
-                        width: '50%',
-                        cursor: 'pointer',
-                        zIndex: 10,
-                        backgroundColor: 'transparent'
-                      }}
-                      onClick={nextImage}
-                      title="Página siguiente"
-                    />
-                  </>
-                )}
+                <div style={{position: 'relative', display: 'inline-block'}}>
+                  <img 
+                    src={comicPageUrls[currentImageIndex]} 
+                    alt={`Página ${currentImageIndex + 1}`}
+                    className="img-fluid rounded"
+                    style={{
+                      maxWidth: '100%',
+                      width: 'min(800px, 95vw)',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      transition: 'opacity 0.3s ease-in-out',
+                      userSelect: 'none',
+                      boxShadow: '0 12px 35px rgba(0, 0, 0, 0.5)'
+                    }}
+                    draggable={false}
+                  />
+                  {/* Áreas de clic pegadas a la imagen */}
+                  {comicPageUrls.length > 1 && (
+                    <>
+                      {/* Área izquierda */}
+                      <div
+                        className="d-flex align-items-center justify-content-start"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          height: '100%',
+                          width: '13%',
+                          cursor: 'pointer',
+                          zIndex: 30,
+                          background: 'linear-gradient(to right, rgba(0,0,0,0.18) 70%, transparent 100%)',
+                          transition: 'background 0.2s',
+                        }}
+                        onClick={prevImage}
+                        title="Página anterior"
+                      >
+                        <span style={{
+                          opacity: 0.7,
+                          fontSize: '2.2rem',
+                          color: '#fff',
+                          marginLeft: '6px',
+                          transition: 'opacity 0.2s',
+                          userSelect: 'none',
+                        }}>&#8592;</span>
+                      </div>
+                      {/* Área derecha */}
+                      <div
+                        className="d-flex align-items-center justify-content-end"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          height: '100%',
+                          width: '13%',
+                          cursor: 'pointer',
+                          zIndex: 30,
+                          background: 'linear-gradient(to left, rgba(0,0,0,0.18) 70%, transparent 100%)',
+                          transition: 'background 0.2s',
+                        }}
+                        onClick={nextImage}
+                        title="Página siguiente"
+                      >
+                        <span style={{
+                          opacity: 0.7,
+                          fontSize: '2.2rem',
+                          color: '#fff',
+                          marginRight: '6px',
+                          transition: 'opacity 0.2s',
+                          userSelect: 'none',
+                        }}>&#8594;</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               
               {/* Indicadores de página */}
               {comicPageUrls.length > 1 && (
                 <div className="d-flex justify-content-center mt-4">
-                  <div className="d-flex flex-wrap justify-content-center gap-2 comic-page-indicators" style={{ maxWidth: '90%' }}>
-                    {comicPageUrls.map((_, index) => (
-                      <button
-                        key={index}
-                        className={`btn ${
-                          index === currentImageIndex 
-                            ? 'btn-danger' 
-                            : 'btn-outline-light'
-                        }`}
-                        onClick={() => goToImage(index)}
-                        style={{ 
-                          width: '50px', 
-                          height: '40px', 
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
+                  <div
+                    className="d-flex flex-nowrap justify-content-center align-items-center gap-1 comic-page-indicators"
+                    style={{
+                      maxWidth: '100%',
+                      overflowX: 'auto',
+                      WebkitOverflowScrolling: 'touch',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    {paginationItems.map((item, index) => {
+                      if (typeof item === 'string') {
+                        return (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className="btn btn-outline-light disabled d-flex align-items-center justify-content-center"
+                            style={{
+                              minWidth: 32,
+                              height: 32,
+                              fontSize: '0.95rem',
+                              padding: 0,
+                              borderRadius: 8,
+                              borderWidth: 1.5,
+                              margin: '0 2px',
+                              pointerEvents: 'none',
+                            }}
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+                      return (
+                        <button
+                          key={item}
+                          className={`btn d-flex align-items-center justify-content-center ${
+                            item === currentImageIndex ? 'btn-danger' : 'btn-outline-light'
+                          }`}
+                          onClick={() => goToImage(item)}
+                          style={{
+                            minWidth: 32,
+                            height: 32,
+                            fontSize: '0.95rem',
+                            padding: 0,
+                            borderRadius: 8,
+                            borderWidth: 1.5,
+                            margin: '0 2px',
+                            transition: 'background 0.2s, color 0.2s',
+                          }}
+                        >
+                          {item + 1}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
