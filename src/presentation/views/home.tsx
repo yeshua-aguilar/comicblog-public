@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Contenido from './contenido';
 import Header from '../components/Header';
-import { getComicsList, getPostBySlug, searchComics } from '../services/blogService';
-import type { BlogPost } from '../types/blog';
+import { getComicsList, getPostBySlug, searchComics } from '../../infrastructure/services/blogService';
+import type { BlogPost } from '../../domain/entities';
 
 /**
  * Componente principal de la página de inicio

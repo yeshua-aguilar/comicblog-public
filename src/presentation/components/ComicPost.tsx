@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Contenido from '../views/contenido';
-import { getPostBySlug, getComicsList, searchComics } from '../services/blogService';
-import type { BlogPost } from '../types/blog';
+import { getPostBySlug, getComicsList, searchComics } from '../../infrastructure/services/blogService';
+import type { BlogPost } from '../../domain/entities';
 
 /**
  * Componente para mostrar un post individual de cómic

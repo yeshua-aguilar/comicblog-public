@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { getComicsList, createPost, updatePost, deletePost, createPostWithSlug } from '../../services/blogService';
-import type { BlogPost } from '../../types/blog';
+import { getComicsList, createPost, updatePost, deletePost, createPostWithSlug } from '../../../infrastructure/services/blogService';
+import type { BlogPost } from '../../../domain/entities';
 import '../../assets/css/dashboard.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { auth } from '../../services/firebase';
+import { auth } from '../../../infrastructure/adapters/firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 

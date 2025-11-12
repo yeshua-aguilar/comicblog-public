@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import type { SearchBarProps } from './SearchBar';
-import { useAuth } from '../types/useAuth';
+import { useAuth } from '../contexts/useAuth';
 
 interface HeaderProps {
   onBlogClick: () => void;

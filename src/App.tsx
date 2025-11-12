@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import Home from './views/home';
-import Genero from './views/genero';
-import AdminLogin from './views/admin/login';
-import Dashboard from './views/admin/dashboard';
-import ComicPost from './components/ComicPost';
-import { AuthProvider, RequireAuth } from './types/loginContexto';
+import Home from './presentation/views/home';
+import Genero from './presentation/views/genero';
+import AdminLogin from './presentation/views/admin/login';
+import Dashboard from './presentation/views/admin/dashboard';
+import ComicPost from './presentation/components/ComicPost';
+import { AuthProvider, RequireAuth } from './presentation/contexts';
 
 function App() {
   return (

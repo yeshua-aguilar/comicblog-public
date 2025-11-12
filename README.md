@@ -2,6 +2,8 @@
 
 ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida con React, TypeScript y Vite, que ofrece una experiencia de usuario inspirada en Netflix. Utiliza Firebase para los servicios de backend, incluyendo Firestore como base de datos en tiempo real.
 
+**🏗️ Este proyecto utiliza Arquitectura Hexagonal (Ports & Adapters)**. Ver [ARQUITECTURA.md](./ARQUITECTURA.md) para más detalles.
+
 ## Características Principales
 
 - **Interfaz Inspirada en Netflix**: Un diseño atractivo y familiar que facilita la navegación.
@@ -9,15 +11,28 @@ ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida 
 - **Filtrado por Género**: Filtra los cómics por tus géneros favoritos.
 - **Búsqueda Inteligente**: Encuentra cómics rápidamente con la función de búsqueda.
 - **Panel de Administración**: Un dashboard completo para que los administradores gestionen las publicaciones.
+- **Arquitectura Hexagonal**: Código mantenible, testeable y escalable.
 
 ## Estructura del Proyecto
 
-- **`src/`**: Código fuente de la aplicación.
-  - **`components/`**: Componentes de React reutilizables.
-  - **`views/`**: Vistas o páginas de la aplicación.
-  - **`services/`**: Lógica para interactuar con servicios externos como Firebase.
-  - **`assets/`**: Imágenes y hojas de estilo.
-- **`public/`**: Archivos públicos que no se procesan a través de Vite.
+El proyecto sigue la **Arquitectura Hexagonal** con las siguientes capas:
+
+```
+src/
+├── domain/              # Entidades del negocio (BlogPost, Genre)
+├── application/         # Lógica de aplicación
+│   ├── ports/          # Interfaces (contratos)
+│   └── use-cases/      # Casos de uso del sistema
+├── infrastructure/      # Implementaciones técnicas
+│   ├── adapters/       # Adaptadores (Firebase, etc.)
+│   └── services/       # Servicios facade
+└── presentation/        # Interfaz de usuario (React)
+    ├── components/     # Componentes reutilizables
+    ├── views/          # Páginas de la aplicación
+    └── assets/         # Recursos estáticos
+```
+
+**Ver documentación completa de arquitectura en [ARQUITECTURA.md](./ARQUITECTURA.md)**
 
 ## Cómo Empezar
 
@@ -68,6 +83,32 @@ ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida 
 - **`npm run lint`**: Analiza el código en busca de errores.
 - **`npm run preview`**: Previsualiza la compilación de producción.
 
+## Arquitectura
+
+Este proyecto implementa **Arquitectura Hexagonal** (Ports & Adapters) que proporciona:
+
+- ✅ **Separación de responsabilidades**: Cada capa tiene un propósito claro
+- ✅ **Testabilidad**: Fácil crear tests unitarios sin dependencias externas
+- ✅ **Independencia de frameworks**: Fácil cambiar React, Firebase u otros frameworks
+- ✅ **Escalabilidad**: Estructura clara para agregar nuevas funcionalidades
+- ✅ **Mantenibilidad**: Cambios en una capa no afectan otras
+
+### Flujo de Datos
+
+```
+UI (React) → Service Facade → Use Cases → Ports → Adapters → Firebase
+```
+
+Para una explicación completa de la arquitectura, ver [ARQUITECTURA.md](./ARQUITECTURA.md)
+
 ## Contribuciones
 
 ¡Las contribuciones son bienvenidas! Si deseas mejorar el proyecto, por favor, abre un *pull request* con tus cambios.
+
+Cuando agregues nuevas funcionalidades, sigue la estructura de arquitectura hexagonal:
+1. Define entidades en `domain/`
+2. Crea puertos en `application/ports/`
+3. Implementa casos de uso en `application/use-cases/`
+4. Crea adaptadores en `infrastructure/adapters/`
+5. Expón servicios en `infrastructure/services/`
+6. Usa en componentes de `presentation/`

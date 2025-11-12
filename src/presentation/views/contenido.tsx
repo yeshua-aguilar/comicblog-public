@@ -1,7 +1,7 @@
 import BlogList from '../components/BlogList';
 import BlogPostComponent from '../components/BlogPost';
 import Header from '../components/Header';
-import type { BlogPost } from '../types/blog';
+import type { BlogPost } from '../../domain/entities';
 import type { SearchBarProps } from '../components/SearchBar';
 
 /**
