@@ -1,5 +1,5 @@
 import { useState, useMemo, type FC } from 'react';
-import type { BlogPost } from '../types/blog';
+import type { BlogPost } from '../../domain/entities';
 
 interface BlogListProps {
   posts: BlogPost[];

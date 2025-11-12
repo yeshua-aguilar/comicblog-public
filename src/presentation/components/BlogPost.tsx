@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { BlogPost } from '../types/blog';
+import type { BlogPost } from '../../domain/entities';
 
 /**
  * Props para el componente BlogPost

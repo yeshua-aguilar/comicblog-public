@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getGenresWithCounts, searchComics } from '../services/blogService';
+import { getGenresWithCounts, searchComics } from '../../infrastructure/services/blogService';
 import Header from '../components/Header';
 import '../assets/css/genero.css';
 
