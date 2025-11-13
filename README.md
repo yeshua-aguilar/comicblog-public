@@ -4,6 +4,13 @@ ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida 
 
 **🏗️ Este proyecto utiliza Arquitectura Hexagonal (Ports & Adapters)**. Ver [ARQUITECTURA.md](./ARQUITECTURA.md) para más detalles.
 
+## ⭐ Novedades - Características Avanzadas
+
+- **💾 Caché en Memoria**: Sistema de caché configurable con TTL para optimizar rendimiento
+- **✅ Validaciones de Dominio**: Value Objects y entidades con lógica de negocio encapsulada
+- **⚡ Eventos de Dominio**: Sistema de eventos para desacoplamiento y extensibilidad
+- **📊 Observabilidad**: Auditoría automática y analytics mediante eventos
+
 ## Características Principales
 
 - **Interfaz Inspirada en Netflix**: Un diseño atractivo y familiar que facilita la navegación.
@@ -19,17 +26,24 @@ El proyecto sigue la **Arquitectura Hexagonal** con las siguientes capas:
 
 ```
 src/
-├── domain/              # Entidades del negocio (BlogPost, Genre)
-├── application/         # Lógica de aplicación
-│   ├── ports/          # Interfaces (contratos)
-│   └── use-cases/      # Casos de uso del sistema
-├── infrastructure/      # Implementaciones técnicas
-│   ├── adapters/       # Adaptadores (Firebase, etc.)
-│   └── services/       # Servicios facade
-└── presentation/        # Interfaz de usuario (React)
-    ├── components/     # Componentes reutilizables
-    ├── views/          # Páginas de la aplicación
-    └── assets/         # Recursos estáticos
+├── domain/                  # Entidades del negocio
+│   ├── entities/           # BlogPost, Genre (con validaciones)
+│   ├── value-objects/      # Slug, Title, Author, etc.
+│   ├── errors/             # Errores de dominio
+│   └── events/             # Eventos de dominio + Event Bus
+├── application/             # Lógica de aplicación
+│   ├── ports/              # Interfaces (contratos)
+│   ├── use-cases/          # Casos de uso del sistema
+│   └── event-handlers/     # Manejadores de eventos
+├── infrastructure/          # Implementaciones técnicas
+│   ├── adapters/           # Adaptadores
+│   │   ├── firebase/       # Firebase (Firestore)
+│   │   └── cache/          # Caché en memoria
+│   └── services/           # Servicios facade
+└── presentation/            # Interfaz de usuario (React)
+    ├── components/         # Componentes reutilizables
+    ├── views/              # Páginas de la aplicación
+    └── assets/             # Recursos estáticos
 ```
 
 **Ver documentación completa de arquitectura en [ARQUITECTURA.md](./ARQUITECTURA.md)**
