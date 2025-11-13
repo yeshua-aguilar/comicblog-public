@@ -3,3 +3,4 @@
  */
 export * from './IBlogRepository';
 export * from './IComicsManifestRepository';
+export * from './ICacheRepository';

@@ -1,5 +1,6 @@
 import type { IBlogRepository } from '../ports';
 import type { BlogPost } from '../../domain/entities';
+import { eventBus, PostSearchedEvent } from '../../domain/events';
 
 /**
  * Caso de uso: Buscar cómics
@@ -16,6 +17,11 @@ export class SearchComicsUseCase {
       return [];
     }
 
-    return await this.blogRepository.searchComics(searchTerm.trim(), maxResults);
+    const results = await this.blogRepository.searchComics(searchTerm.trim(), maxResults);
+
+    // Emitir evento de búsqueda
+    await eventBus.publish(new PostSearchedEvent(searchTerm.trim(), results.length));
+
+    return results;
   }
 }
