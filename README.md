@@ -6,7 +6,8 @@ ComicFlix es una plataforma de blogs de cómics dinámica y moderna, construida 
 
 ## ⭐ Novedades - Características Avanzadas
 
-- **💾 Caché en Memoria**: Sistema de caché configurable con TTL para optimizar rendimiento
+- **💾 Caché Persistente**: Sistema de caché robusto usando IndexedDB para funcionamiento offline
+- **🧪 Testing Completo**: Tests unitarios y de integración con Vitest
 - **✅ Validaciones de Dominio**: Value Objects y entidades con lógica de negocio encapsulada
 - **⚡ Eventos de Dominio**: Sistema de eventos para desacoplamiento y extensibilidad
 - **📊 Observabilidad**: Auditoría automática y analytics mediante eventos
@@ -38,7 +39,7 @@ src/
 ├── infrastructure/          # Implementaciones técnicas
 │   ├── adapters/           # Adaptadores
 │   │   ├── firebase/       # Firebase (Firestore)
-│   │   └── cache/          # Caché en memoria
+│   │   └── cache/          # Caché persistente (IndexedDB)
 │   └── services/           # Servicios facade
 └── presentation/            # Interfaz de usuario (React)
     ├── components/         # Componentes reutilizables
@@ -95,6 +96,7 @@ src/
 - **`npm run dev`**: Inicia el servidor de desarrollo.
 - **`npm run build`**: Compila la aplicación para producción.
 - **`npm run lint`**: Analiza el código en busca de errores.
+- **`npm test`**: Ejecuta los tests unitarios y de integración con Vitest.
 - **`npm run preview`**: Previsualiza la compilación de producción.
 
 ## Arquitectura

@@ -1,4 +1,6 @@
+import type { IBlogRepository } from '../../application/ports';
 import { FirebaseBlogRepository, FirebaseComicsManifestRepository } from '../adapters/firebase';
+import { CachedBlogRepository, IndexedDBCacheAdapter } from '../adapters/cache';
 import {
   GetComicsListUseCase,
   GetPostBySlugUseCase,
@@ -16,7 +18,7 @@ import type { QueryDocumentSnapshot } from 'firebase/firestore';
  * Mantiene una API compatible con el servicio anterior para facilitar la migración
  */
 class BlogService {
-  private blogRepository: FirebaseBlogRepository;
+  private blogRepository: IBlogRepository;
   private manifestRepository: FirebaseComicsManifestRepository;
 
   // Casos de uso
@@ -30,7 +32,26 @@ class BlogService {
 
   constructor() {
     // Inicializar repositorios
-    this.blogRepository = new FirebaseBlogRepository();
+    // Inicializar repositorios base
+    const baseBlogRepository = new FirebaseBlogRepository();
+
+    // Inicializar sistema de caché persistente (IndexedDB)
+    const cacheAdapter = new IndexedDBCacheAdapter({
+      dbName: 'comic-blog-cache',
+      defaultTTL: 5 * 60 * 1000 // 5 minutos por defecto
+    });
+
+    // Decorar repositorio con caché
+    this.blogRepository = new CachedBlogRepository(
+      baseBlogRepository,
+      cacheAdapter,
+      {
+        postTTL: 10 * 60 * 1000, // 10 minutos para posts
+        listTTL: 5 * 60 * 1000,  // 5 minutos para listas
+        searchTTL: 2 * 60 * 1000 // 2 minutos para búsquedas
+      }
+    );
+
     this.manifestRepository = new FirebaseComicsManifestRepository(this.blogRepository);
 
     // Inicializar casos de uso

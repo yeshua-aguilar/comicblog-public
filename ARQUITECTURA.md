@@ -53,8 +53,9 @@ src/
 │   │   │   ├── FirebaseBlogRepository.ts
 │   │   │   ├── FirebaseComicsManifestRepository.ts
 │   │   │   └── index.ts
+│   │   │   └── index.ts
 │   │   └── cache/                  # Adaptadores de caché
-│   │       ├── InMemoryCacheAdapter.ts  # Caché en memoria
+│   │       ├── IndexedDBCacheAdapter.ts # Caché persistente (IndexedDB)
 │   │       ├── CachedBlogRepository.ts  # Decorator con caché
 │   │       └── index.ts
 │   │
@@ -150,10 +151,11 @@ Implementaciones concretas de los puertos:
 - Gestiona caché para optimizar consultas
 
 **Cache Adapters**:
-- `InMemoryCacheAdapter`: Implementa `ICacheRepository` con almacenamiento en memoria
+- `IndexedDBCacheAdapter`: Implementa `ICacheRepository` usando **IndexedDB**
+  - Persistencia de datos (sobrevive a recargas)
   - Configuración de TTL (Time To Live)
   - Limpieza automática de entradas expiradas
-  - Límite de tamaño configurable (LRU básico)
+  - Sin límites estrictos de tamaño (depende del disco)
   - Soporte para patrones de búsqueda de claves
 - `CachedBlogRepository`: Decorator que añade caché a cualquier `IBlogRepository`
   - Patrón Decorator para añadir funcionalidad sin modificar el original
@@ -216,7 +218,7 @@ Flujo inverso hasta la UI
 - El dominio no conoce React ni Firebase
 - Fácil migrar a otra base de datos
 - Puedes cambiar de UI framework sin tocar la lógica
-- Caché intercambiable (memoria, Redis, etc.)
+- Caché intercambiable (IndexedDB, Redis, memoria, etc.)
 
 ### 4. Escalabilidad
 - Agregar nuevas features es estructurado
@@ -258,7 +260,7 @@ Flujo inverso hasta la UI
 
 ## 🧪 Testing
 
-La arquitectura hexagonal facilita el testing:
+La arquitectura hexagonal facilita el testing. Utilizamos **Vitest** como runner:
 
 ```typescript
 // Ejemplo de test de caso de uso
@@ -266,12 +268,12 @@ describe('CreatePostUseCase', () => {
   it('should create a post with valid data', async () => {
     // Mock del repositorio
     const mockBlogRepo = {
-      createPost: jest.fn().mockResolvedValue('post-123')
+      createPost: vi.fn().mockResolvedValue('post-123')
     };
     const mockManifestRepo = {
-      invalidateComicsListCache: jest.fn(),
-      invalidateGenresCache: jest.fn(),
-      updateManifest: jest.fn()
+      invalidateComicsListCache: vi.fn(),
+      invalidateGenresCache: vi.fn(),
+      updateManifest: vi.fn()
     };
     
     // Caso de uso con mocks
@@ -290,7 +292,7 @@ describe('CreatePostUseCase', () => {
   });
 
   it('should throw ValidationError for invalid title', async () => {
-    const mockBlogRepo = { createPost: jest.fn() };
+    const mockBlogRepo = { createPost: vi.fn() };
     const mockManifestRepo = { /* ... */ };
     const useCase = new CreatePostUseCase(mockBlogRepo, mockManifestRepo);
     
@@ -305,22 +307,22 @@ describe('CreatePostUseCase', () => {
 
 ### Características del Adaptador de Caché
 
-El sistema de caché implementado ofrece:
+El sistema de caché implementado utiliza **IndexedDB** para persistencia robusta:
 
-**InMemoryCacheAdapter**:
+**IndexedDBCacheAdapter**:
+- **Persistencia**: Los datos no se pierden al recargar la página
 - **TTL Configurable**: Tiempo de vida por entrada
 - **Limpieza Automática**: Elimina entradas expiradas periódicamente
-- **Límite de Tamaño**: Implementa LRU básico
-- **Búsqueda por Patrón**: Permite invalidar grupos de claves
-- **Estadísticas**: Monitoreo del uso del caché
+- **Gran Capacidad**: Almacenamiento limitado solo por el disco del usuario
+- **Asíncrono**: No bloquea el hilo principal
 
 ```typescript
 // Ejemplo de uso
-import { InMemoryCacheAdapter } from './infrastructure/adapters/cache';
+import { IndexedDBCacheAdapter } from './infrastructure/adapters/cache';
 
-const cache = new InMemoryCacheAdapter({
+const cache = new IndexedDBCacheAdapter({
+  dbName: 'comic-blog-cache',
   defaultTTL: 5 * 60 * 1000,  // 5 minutos
-  maxSize: 100,                // 100 entradas
   cleanupInterval: 60 * 1000   // Limpiar cada minuto
 });
 
@@ -338,10 +340,10 @@ await cache.deletePattern('posts:*'); // Invalidar patrón
 ```typescript
 // Ejemplo de uso
 import { FirebaseBlogRepository } from './infrastructure/adapters/firebase';
-import { InMemoryCacheAdapter, CachedBlogRepository } from './infrastructure/adapters/cache';
+import { IndexedDBCacheAdapter, CachedBlogRepository } from './infrastructure/adapters/cache';
 
 const firebaseRepo = new FirebaseBlogRepository();
-const cache = new InMemoryCacheAdapter();
+const cache = new IndexedDBCacheAdapter();
 const cachedRepo = new CachedBlogRepository(firebaseRepo, cache, {
   postTTL: 10 * 60 * 1000,    // Posts: 10 min
   listTTL: 5 * 60 * 1000,     // Listas: 5 min
@@ -517,62 +519,10 @@ try {
 }
 ```
 
-## 🧪 Testing
 
-La arquitectura hexagonal facilita el testing:
-
-```typescript
-// Ejemplo de test de caso de uso
-describe('CreatePostUseCase', () => {
-  it('should create a post with valid data', async () => {
-    // Mock del repositorio
-    const mockBlogRepo = {
-      createPost: jest.fn().mockResolvedValue('post-123')
-    };
-    const mockManifestRepo = {
-      invalidateComicsListCache: jest.fn(),
-      invalidateGenresCache: jest.fn(),
-      updateManifest: jest.fn()
-    };
-    
-    // Caso de uso con mocks
-    const useCase = new CreatePostUseCase(mockBlogRepo, mockManifestRepo);
-    
-    // Ejecutar
-    const postId = await useCase.execute({
-      title: 'Test Post',
-      author: 'Test Author',
-      // ... más datos
-    });
-    
-    // Verificar
-    expect(postId).toBe('post-123');
-    expect(mockBlogRepo.createPost).toHaveBeenCalled();
-  });
-
-  it('should throw ValidationError for invalid title', async () => {
-    const mockBlogRepo = { createPost: jest.fn() };
-    const mockManifestRepo = { /* ... */ };
-    const useCase = new CreatePostUseCase(mockBlogRepo, mockManifestRepo);
-    
-    await expect(
-      useCase.execute({ title: '', /* ... */ })
-    ).rejects.toThrow(ValidationError);
-  });
-});
-```
 
 ## 📚 Referencias
 
 - [Arquitectura Hexagonal - Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/)
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [Ports and Adapters Pattern](https://herbertograca.com/2017/09/14/ports-adapters-architecture/)
-
-## 🚀 Próximos Pasos
-
-1. Agregar tests unitarios para casos de uso
-2. Integrar el sistema de caché en el servicio principal
-3. Agregar tests de integración para adaptadores
-4. Implementar métricas y analytics usando eventos
-6. Considerar agregar caché persistente (Redis, localStorage)
-7. Implementar rate limiting usando eventos
